@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import React from 'react';
 import './globals.css';
-import MobileNav from './nav/MobileNav';
 import Script from 'next/script';
 
 
@@ -40,37 +39,34 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-	{/* Google tag (gtag.js) — hard coded */}
-<>
-  <Script
-    src="https://www.googletagmanager.com/gtag/js?id=G-L4D6N4ZFKW"
-    strategy="afterInteractive"
-  />
-  <Script id="ga-gtag" strategy="afterInteractive">
-    {`
+        {/* Google tag (gtag.js) — hard coded */}
+        <>
+          <Script
+            src="https://www.googletagmanager.com/gtag/js?id=G-L4D6N4ZFKW"
+            strategy="afterInteractive"
+          />
+          <Script id="ga-gtag" strategy="afterInteractive">
+            {`
       window.dataLayer = window.dataLayer || [];
       function gtag(){window.dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-L4D6N4ZFKW');
     `}
-  </Script>
-</>
+          </Script>
+        </>
 
         <header className="header">
 
-<div className="header-inner">
+          <div className="header-inner">
             <a href="/" style={{ fontWeight: 800, textDecoration: 'none', color: '#111', display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ width: 26, height: 26, borderRadius: 8, background: '#4F46E5', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12 }}>H1</span>
               <span>H1B Friendly</span>
             </a>
 
             <nav className="nav-desktop">
-              <a href="/rankings" style={navLink}>Rankings</a>
-              <a href="/guides" style={navLink}>Guides</a>
             </nav>
 
             <div className="nav-mobile">
-              <MobileNav />
             </div>
           </div>
         </header>

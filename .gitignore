@@ -1,0 +1,19 @@
+# local env files
+.env
+.env.*
+!.env.example
+
+# node
+node_modules/
+dist/
+
+# macOS
+.DS_Store
+
+# python
+venv/
+__pycache__/
+*.pyc
+
+# data
+h1bfriend-backend_h1bfriend_pgdata/

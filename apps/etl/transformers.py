@@ -35,7 +35,19 @@ LCA_COLUMNS = [
     "preparer_business_name", "preparer_email"
 ]
 
-def load_excel_to_postgres(file_path: str, fiscal_year: int) -> None:
+def drop_indexes(cur) -> None:
+    print("Dropping indexes temporarily for bulk copy...")
+    cur.execute("DROP INDEX IF EXISTS idx_lca_raw_year;")
+    cur.execute("DROP INDEX IF EXISTS idx_lca_raw_employer;")
+    cur.execute("DROP INDEX IF EXISTS idx_lca_raw_case_number;")
+
+def recreate_indexes(cur) -> None:
+    print("Recreating indexes...")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_year ON lca_raw (fiscal_year);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_employer ON lca_raw (employer_name);")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_case_number ON lca_raw (case_number);")
+
+def load_excel_to_postgres(file_path: str, fiscal_year: int, cur=None) -> None:
     """Read DOL LCA xlsx file, align headers, drop PI, and stream dynamically to Postgres."""
     print(f"Reading {file_path} for fiscal year {fiscal_year}...")
     
@@ -51,9 +63,15 @@ def load_excel_to_postgres(file_path: str, fiscal_year: int) -> None:
     print(f"Identified {len(use_cols)} columns to import.")
 
     # We read chunk by chunk
-    conn = get_connection()
-    try:
+    conn = None
+    own_cur = False
+    
+    if cur is None:
+        conn = get_connection()
         cur = conn.cursor()
+        own_cur = True
+        
+    try:
         
         # We need to map the incoming DataFrame columns exactly to our LCA_COLUMNS order.
         # Ensure we have fiscal_year mapped manually.
@@ -84,29 +102,24 @@ def load_excel_to_postgres(file_path: str, fiscal_year: int) -> None:
             # Generate CSV in memory for fast copy_expert streaming
             csv_buffer = StringIO()
             final_df.to_csv(csv_buffer, index=False, header=False, sep='\t')
-            # To avoid "posting list tuple with 4 items cannot be split" during mass INSERT:
-            print("Dropping indexes temporarily for bulk copy...")
-            cur.execute("DROP INDEX IF EXISTS idx_lca_raw_year;")
-            cur.execute("DROP INDEX IF EXISTS idx_lca_raw_employer;")
-            cur.execute("DROP INDEX IF EXISTS idx_lca_raw_case_number;")
+            csv_buffer.seek(0)
             
             print("Writing to PostgreSQL using high-speed COPY...")
             cur.copy_expert(f"""
                 COPY lca_raw ({",".join(LCA_COLUMNS)}) FROM STDIN WITH (FORMAT csv, DELIMITER '\t')
             """, csv_buffer)
-            
-            print("Recreating indexes...")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_year ON lca_raw (fiscal_year);")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_employer ON lca_raw (employer_name);")
-            cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_case_number ON lca_raw (case_number);")
 
-        conn.commit()
+        if own_cur and conn:
+            conn.commit()
         print(f"Successfully processed {file_path}.")
     except Exception as e:
-        conn.rollback()
+        if own_cur and conn:
+            conn.rollback()
         print(f"Error during Postgres insertion: {e}")
         raise
     finally:
-        if cur:
-            cur.close()
-        release_connection(conn)
+        if own_cur:
+            if cur:
+                cur.close()
+            if conn:
+                release_connection(conn)

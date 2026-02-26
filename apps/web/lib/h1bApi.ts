@@ -76,6 +76,22 @@ export async function getAvailableYears() {
   return data.data;
 }
 
+export type TitleSummary = {
+  slug: string;
+  title: string;
+  filings: number;
+  last_year: number;
+};
+
+export async function getTitles(params?: { year?: string; limit?: number }) {
+  const sp = new URLSearchParams();
+  if (params?.year) sp.set('year', params.year);
+  if (params?.limit) sp.set('limit', String(params.limit));
+
+  const data = await fetchJson<ApiEnvelope<TitleSummary[]>>(`/api/v1/titles?${sp.toString()}`);
+  return data.data;
+}
+
 export async function listCompanies(params?: {
   page?: number;
   size?: number;
@@ -167,6 +183,7 @@ export async function getRankings(params?: {
   state?: string;
   city?: string;
   job_title?: string;
+  sortBy?: 'approvals' | 'salary';
   limit?: number;
 }) {
   const sp = new URLSearchParams();
@@ -174,8 +191,39 @@ export async function getRankings(params?: {
   if (params?.state) sp.set('state', params.state);
   if (params?.city) sp.set('city', params.city);
   if (params?.job_title) sp.set('job_title', params.job_title);
+  if (params?.sortBy) sp.set('sortBy', params.sortBy);
   if (params?.limit) sp.set('limit', String(params.limit));
 
   const data = await fetchJson<ApiEnvelope<Ranking[]>>(`/api/v1/rankings?${sp.toString()}`);
+  return data.data;
+}
+
+export type RankingsSummary = {
+  totals: {
+    total_filings: number;
+    total_approvals: number;
+    avg_salary: number | string;
+  };
+  trend: Array<{
+    year: number;
+    filings: number;
+    approvals: number;
+    avg_salary: number | string;
+  }>;
+};
+
+export async function getRankingsSummary(params?: {
+  year?: string;
+  state?: string;
+  city?: string;
+  job_title?: string;
+}) {
+  const sp = new URLSearchParams();
+  if (params?.year) sp.set('year', params.year);
+  if (params?.state) sp.set('state', params.state);
+  if (params?.city) sp.set('city', params.city);
+  if (params?.job_title) sp.set('job_title', params.job_title);
+
+  const data = await fetchJson<ApiEnvelope<RankingsSummary>>(`/api/v1/rankings/summary?${sp.toString()}`);
   return data.data;
 }

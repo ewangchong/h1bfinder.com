@@ -393,6 +393,7 @@ app.get('/api/v1/rankings', async (req, reply) => {
       state: z.string().trim().toUpperCase().optional(),
       city: z.string().trim().toUpperCase().optional(),
       job_title: z.string().trim().optional(),
+      sortBy: z.enum(['approvals', 'salary']).default('approvals'),
       limit: z.coerce.number().int().min(1).max(500).default(50),
     })
     .parse(req.query);
@@ -446,12 +447,98 @@ app.get('/api/v1/rankings', async (req, reply) => {
       ROUND(a.avg_salary, 2)::numeric AS avg_salary
     FROM agg a
     LEFT JOIN companies c ON c.employer_name_normalized = a.employer_norm
-    ORDER BY a.approvals DESC
+    ORDER BY ${q.sortBy === 'salary' ? 'a.avg_salary DESC NULLS LAST, a.approvals DESC' : 'a.approvals DESC'}
     LIMIT $${params.length};
   `;
 
   const res = await pool.query(sql, params);
   return reply.send(ok(res.rows));
+});
+
+app.get('/api/v1/rankings/summary', async (req, reply) => {
+  const q = z
+    .object({
+      year: z.coerce.number().int().min(2000).max(2100).optional(),
+      state: z.string().trim().toUpperCase().optional(),
+      city: z.string().trim().toUpperCase().optional(),
+      job_title: z.string().trim().optional(),
+    })
+    .parse(req.query);
+
+  const exactWhere: string[] = ["employer_name IS NOT NULL AND employer_name <> ''"];
+  const exactParams: any[] = [];
+
+  const trendWhere: string[] = ["employer_name IS NOT NULL AND employer_name <> ''"];
+  const trendParams: any[] = [];
+
+  if (q.year) {
+    exactParams.push(q.year);
+    exactWhere.push(`fiscal_year = $${exactParams.length}`);
+  }
+
+  if (q.state) {
+    const val = q.state;
+
+    exactParams.push(val);
+    exactWhere.push(`TRIM(UPPER(worksite_state)) = $${exactParams.length}`);
+
+    trendParams.push(val);
+    trendWhere.push(`TRIM(UPPER(worksite_state)) = $${trendParams.length}`);
+  }
+
+  if (q.city) {
+    const val = q.city;
+
+    exactParams.push(val);
+    exactWhere.push(`TRIM(UPPER(worksite_city)) = $${exactParams.length}`);
+
+    trendParams.push(val);
+    trendWhere.push(`TRIM(UPPER(worksite_city)) = $${trendParams.length}`);
+  }
+
+  if (q.job_title) {
+    const val = `%${q.job_title}%`;
+
+    exactParams.push(val);
+    exactWhere.push(`job_title ILIKE $${exactParams.length}`);
+
+    trendParams.push(val);
+    trendWhere.push(`job_title ILIKE $${trendParams.length}`);
+  }
+
+  const exactWhereSql = exactWhere.length ? `WHERE ${exactWhere.join(' AND ')}` : '';
+  const trendWhereSql = trendWhere.length ? `WHERE ${trendWhere.join(' AND ')}` : '';
+
+  const exactSql = `
+    SELECT
+      COUNT(*)::int AS total_filings,
+      SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS total_approvals,
+      AVG(NULLIF(regexp_replace(wage_rate_of_pay_from, '[^0-9.]', '', 'g'), '')::numeric) AS avg_salary
+    FROM lca_raw
+    ${exactWhereSql}
+  `;
+
+  const trendSql = `
+    SELECT
+      fiscal_year AS year,
+      COUNT(*)::int AS filings,
+      SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS approvals,
+      AVG(NULLIF(regexp_replace(wage_rate_of_pay_from, '[^0-9.]', '', 'g'), '')::numeric) AS avg_salary
+    FROM lca_raw
+    ${trendWhereSql}
+    GROUP BY fiscal_year
+    ORDER BY fiscal_year ASC
+  `;
+
+  const [exactRes, trendRes] = await Promise.all([
+    pool.query(exactSql, exactParams),
+    pool.query(trendSql, trendParams)
+  ]);
+
+  return reply.send(ok({
+    totals: exactRes.rows[0] || { total_filings: 0, total_approvals: 0, avg_salary: 0 },
+    trend: trendRes.rows || []
+  }));
 });
 
 async function main() {

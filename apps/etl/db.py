@@ -145,7 +145,7 @@ def migrate_if_needed():
                 IF NOT EXISTS (
                     SELECT 1 FROM pg_indexes WHERE schemaname = 'public' AND indexname = 'idx_companies_slug'
                 ) THEN
-                    CREATE UNIQUE INDEX idx_companies_slug ON companies (slug);
+                    CREATE INDEX idx_companies_slug ON companies (slug);
                 END IF;
             END $$;
             """)
