@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: h1b-db
+    environment:
+      POSTGRES_DB: h1bfriend
+      POSTGRES_USER: h1b
+      POSTGRES_PASSWORD: h1bpass
+    ports:
+      - "5433:5432"
+    volumes:
+      - h1bfriend-backend_h1bfriend_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U h1b -d h1bfriend" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./apps/backend
+    container_name: h1b-backend
+    ports:
+      - "8089:8089"
+    environment:
+      - DATABASE_URL=postgres://h1b:h1bpass@db:5432/h1bfriend
+      - PORT=8089
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+    container_name: h1b-web
+    ports:
+      - "3000:3000"
+    environment:
+      - H1B_API_BASE_URL=http://backend:8089
+      - NEXT_PUBLIC_SITE_URL=http://localhost:3000
+    depends_on:
+      - backend
+
+volumes:
+  h1bfriend-backend_h1bfriend_pgdata:
+    external: true

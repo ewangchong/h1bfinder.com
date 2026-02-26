@@ -1,0 +1,29 @@
+variable "aws_region" {
+  description = "The AWS region to deploy to."
+  type        = string
+  default     = "us-east-1"
+}
+
+variable "vpc_cidr" {
+  description = "CIDR block for the VPC"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+variable "subnet_cidr" {
+  description = "CIDR block for the Subnet"
+  type        = string
+  default     = "10.0.1.0/24"
+}
+
+variable "instance_type" {
+  description = "EC2 instance type for running Docker Compose"
+  type        = string
+  default     = "t3.small"
+}
+
+variable "key_name" {
+  description = "The name of the SSH key pair to attach to the instance. You must create this key in AWS manually first if you want SSH access."
+  type        = string
+  default     = ""
+}
