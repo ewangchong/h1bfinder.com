@@ -4,7 +4,7 @@
 # 请根据您的实际路径修改
 DATA_DIR="/Users/chongwang/Documents/openclaw-workspace/h1b-data"
 DONE_DIR="$DATA_DIR/done"
-export DATABASE_URL="postgres://h1b:h1bpass@localhost:5432/h1bfriend"
+export DATABASE_URL="${DATABASE_URL:-postgres://h1b:change_me@localhost:5432/h1bfriend}"
 
 # 切换到脚本所在目录(etl)
 cd "$(dirname "$0")" || exit

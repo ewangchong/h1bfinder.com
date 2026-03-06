@@ -91,7 +91,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </div>
               </div>
             </div>
-            <div style={{ marginTop: 14, color: '#6B7280' }}>© {new Date().getFullYear()} H1B Friendly</div>
+            <div style={{ marginTop: 14, color: '#6B7280', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+              <div>© {new Date().getFullYear()} H1B Friendly</div>
+              <div>Contact: <a href="mailto:h1bfriendly@gmail.com" style={{ color: '#6B7280', textDecoration: 'underline' }}>h1bfriendly@gmail.com</a></div>
+            </div>
           </div>
         </footer>
       </body>

@@ -99,20 +99,10 @@ resource "aws_security_group" "h1b_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow Next.js default port if accessing directly
   ingress {
-    description = "Next.js Web"
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  
-  # Allow Fastify backend port
-  ingress {
-    description = "Fastify API"
-    from_port   = 8089
-    to_port     = 8089
+    description = "HTTPS"
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
