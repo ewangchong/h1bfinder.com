@@ -5,6 +5,8 @@ type ApiEnvelope<T> = {
   message?: string;
 };
 
+const API_REVALIDATE_SECONDS = 60 * 60;
+
 type PageResponse<T> = {
   content: T[];
   page: number;
@@ -58,7 +60,9 @@ function baseUrl() {
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${baseUrl()}${path}`;
-  const caching: RequestInit = { cache: 'no-store' };
+  const caching: RequestInit = {
+    next: { revalidate: API_REVALIDATE_SECONDS },
+  };
 
   const res = await fetch(url, {
     ...init,

@@ -1,9 +1,14 @@
-    # Proxy API requests to the Fastify backend
+h1bfriendly.com, www.h1bfriendly.com {
+    redir https://h1bfriend.com{uri} permanent
+}
+
+h1bfriend.com, www.h1bfriend.com {
+    encode zstd gzip
+
     handle /api/* {
         reverse_proxy backend:8089
     }
 
-    # Reverse proxy everything else to the Next.js frontend
     handle {
         reverse_proxy web:3000
     }

@@ -77,9 +77,21 @@ cd h1bfriendly.com
 docker compose up -d
 ```
 
+`docker compose` will run a one-shot `migrate` job before the backend starts, so required database indexes are created automatically on fresh environments.
+
 ### 3. Ingest Data
 
 Follow the instructions in `apps/etl/README.md` to load the latest DOL datasets into your local database.
+
+### 4. Run Migrations Manually
+
+If you need to apply database changes without bringing up the full stack:
+
+```bash
+cd apps/backend
+npm run build
+npm run migrate
+```
 
 ---
 

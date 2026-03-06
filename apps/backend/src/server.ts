@@ -5,6 +5,7 @@ import pg from 'pg';
 const { Pool } = pg;
 import { z } from 'zod';
 import { LRUCache } from 'lru-cache';
+import { slugify } from './slug.js';
 
 
 const envSchema = z.object({
@@ -38,7 +39,7 @@ const ANNUAL_WAGE_SQL = `
 // Purely for aggregate rankings/averages to avoid data-entry errors skewing results
 const SANITY_WAGE_SQL = `
   CASE 
-    WHEN (${ANNUAL_WAGE_SQL}) BETWEEN 10000 AND 1000000 THEN (${ANNUAL_WAGE_SQL})
+    WHEN (${ANNUAL_WAGE_SQL}) BETWEEN 10000 AND 5000000 THEN (${ANNUAL_WAGE_SQL})
     ELSE NULL
   END
 `;
@@ -48,6 +49,33 @@ const cache = new LRUCache<string, any>({
   ttl: 1000 * 60 * 60 * 24, // 24 hours (data changes quarterly)
 });
 
+const SHARED_CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
+
+function getCached<T>(key: string): T | undefined {
+  return cache.get(key) as T | undefined;
+}
+
+function setCached<T>(key: string, value: T) {
+  cache.set(key, value);
+  return value;
+}
+
+function applySharedCacheHeaders(reply: any) {
+  reply.header('Cache-Control', SHARED_CACHE_CONTROL);
+}
+
+function sendCachedOk<T>(reply: any, data: T, message?: string) {
+  applySharedCacheHeaders(reply);
+  return reply.send(ok(data, message));
+}
+
+function titleFromSlug(slug: string) {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .join(' ')
+    .toUpperCase();
+}
 
 const app = Fastify({ logger: true });
 
@@ -99,13 +127,22 @@ function page<T>(content: T[], pageNum: number, size: number, total: number): Pa
 app.get('/health', async () => ({ ok: true }));
 
 app.get('/api/v1/meta/years', async (_req, reply) => {
+  const cacheKey = 'meta:years';
+  const cached = getCached<number[]>(cacheKey);
+  if (cached) return sendCachedOk(reply, cached);
+
   const res = await pool.query(
     'SELECT DISTINCT fiscal_year::int AS year FROM lca_raw ORDER BY year DESC'
   );
-  return reply.send(ok(res.rows.map((r) => r.year)));
+  const years = res.rows.map((r) => r.year);
+  return sendCachedOk(reply, setCached(cacheKey, years));
 });
 
 app.get('/api/v1/companies', async (req, reply) => {
+  const cacheKey = `companies:${JSON.stringify(req.query)}`;
+  const cached = getCached<PageResponse<any>>(cacheKey);
+  if (cached) return sendCachedOk(reply, cached);
+
   const q = z
     .object({
       page: z.coerce.number().int().min(0).default(0),
@@ -153,24 +190,33 @@ app.get('/api/v1/companies', async (req, reply) => {
     params
   );
 
-  return reply.send(ok(page(rowsRes.rows, q.page, q.size, total)));
+  const payload = page(rowsRes.rows, q.page, q.size, total);
+  return sendCachedOk(reply, setCached(cacheKey, payload));
 });
 
 app.get('/api/v1/companies/:id', async (req, reply) => {
   const params = z.object({ id: z.string().uuid() }).parse(req.params);
   const res = await pool.query('SELECT * FROM companies WHERE id=$1', [params.id]);
   if (res.rowCount === 0) return reply.code(404).send({ success: false, error: 'not_found' });
-  return reply.send(ok(res.rows[0]));
+  return sendCachedOk(reply, res.rows[0]);
 });
 
 app.get('/api/v1/companies/slug/:slug', async (req, reply) => {
   const params = z.object({ slug: z.string().min(1) }).parse(req.params);
+  const cacheKey = `company:slug:${params.slug}`;
+  const cached = getCached<any>(cacheKey);
+  if (cached) return sendCachedOk(reply, cached);
+
   const res = await pool.query('SELECT * FROM companies WHERE slug=$1', [params.slug]);
   if (res.rowCount === 0) return reply.code(404).send({ success: false, error: 'not_found' });
-  return reply.send(ok(res.rows[0]));
+  return sendCachedOk(reply, setCached(cacheKey, res.rows[0]));
 });
 
 app.get('/api/v1/companies/slug/:slug/insights', async (req, reply) => {
+  const cacheKey = `company:insights:${JSON.stringify({ params: req.params, query: req.query })}`;
+  const cached = getCached<any>(cacheKey);
+  if (cached) return sendCachedOk(reply, cached);
+
   const params = z.object({ slug: z.string().min(1) }).parse(req.params);
   const q = z.object({ year: z.coerce.number().int().min(2000).max(2100).optional() }).parse(req.query);
 
@@ -231,7 +277,7 @@ app.get('/api/v1/companies/slug/:slug/insights', async (req, reply) => {
 
   const bind = q.year ? [employerNorm, q.year] : [employerNorm];
   const res = await pool.query(sql, bind);
-  return reply.send(ok(res.rows[0]));
+  return sendCachedOk(reply, setCached(cacheKey, res.rows[0]));
 });
 
 app.get('/api/v1/jobs', async (req, reply) => {
@@ -301,8 +347,8 @@ app.get('/api/v1/jobs/:id', async (req, reply) => {
 
 app.get('/api/v1/titles', async (req, reply) => {
   const cacheKey = `titles:${JSON.stringify(req.query)}`;
-  const cached = cache.get(cacheKey);
-  if (cached) return reply.send(ok(cached));
+  const cached = getCached<any[]>(cacheKey);
+  if (cached) return sendCachedOk(reply, cached);
 
   const q = z
 
@@ -319,24 +365,16 @@ app.get('/api/v1/titles', async (req, reply) => {
   params.push(q.limit);
 
   const sql = `
-    WITH base AS (
+    WITH agg AS (
       SELECT
-        job_title AS title_raw,
-        job_title AS title_norm,
-        fiscal_year
-      FROM lca_raw
-      ${where} job_title IS NOT NULL AND job_title <> ''
-    ), agg AS (
-      SELECT
-        title_norm,
-        title_norm AS title,
+        job_title AS title,
         COUNT(*)::int AS filings,
         MAX(fiscal_year)::int AS last_year
-      FROM base
-      GROUP BY title_norm
+      FROM lca_raw
+      ${where} job_title IS NOT NULL AND job_title <> ''
+      GROUP BY job_title
     )
     SELECT
-      LOWER(TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(title, '[^A-Za-z0-9]+', '-', 'g'), '-+', '-', 'g'))) AS slug,
       title,
       filings,
       last_year
@@ -345,42 +383,40 @@ app.get('/api/v1/titles', async (req, reply) => {
     LIMIT $${params.length};
   `;
 
-  console.log("SQL QUERY:", sql);
-
   const res = await pool.query(sql, params);
-  cache.set(cacheKey, res.rows);
-  return reply.send(ok(res.rows));
+  const rows = res.rows.map((row) => ({
+    ...row,
+    slug: slugify(row.title),
+  }));
+  return sendCachedOk(reply, setCached(cacheKey, rows));
 });
 
 app.get('/api/v1/titles/:slug/summary', async (req, reply) => {
+  const cacheKey = `title:summary:${JSON.stringify({ params: req.params, query: req.query })}`;
+  const cached = getCached<any>(cacheKey);
+  if (cached) return sendCachedOk(reply, cached);
+
   const params = z.object({ slug: z.string().min(1) }).parse(req.params);
   const q = z.object({ year: z.coerce.number().int().min(2000).max(2100).optional() }).parse(req.query);
+  const title = titleFromSlug(params.slug);
+  const trendCacheKey = `title:trend:${params.slug}`;
 
   const yearWhere = q.year ? 'AND fiscal_year = $2' : '';
-  const sql = `
-    WITH base AS (
+  const summarySql = `
+    WITH filtered AS (
       SELECT
-        job_title AS title_raw,
-        job_title AS title_norm,
-        LOWER(TRIM(BOTH '-' FROM REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_REPLACE(TRIM(job_title), '\\s+', ' ', 'g'), '[^A-Za-z0-9]+', '-', 'g'), '-+', '-', 'g'))) AS slug,
+        job_title AS title,
         employer_name_normalized AS employer_norm,
         TRIM(worksite_state) AS worksite_state,
-        TRIM(worksite_city) AS worksite_city,
         case_status,
         fiscal_year
       FROM lca_raw
       WHERE job_title IS NOT NULL AND job_title <> ''
-        AND employer_name IS NOT NULL AND employer_name <> ''
-    ), base_filtered AS (
-      SELECT * FROM base
-      WHERE slug = $1
-    ), filtered AS (
-      SELECT * FROM base_filtered
-      WHERE 1=1
-      ${yearWhere}
+        AND job_title = $1
+        ${yearWhere}
     ), totals AS (
       SELECT
-        MAX(title_raw) AS title,
+        MAX(title) AS title,
         COUNT(*)::int AS filings,
         SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS approvals,
         MAX(fiscal_year)::int AS last_year
@@ -405,43 +441,45 @@ app.get('/api/v1/titles/:slug/summary', async (req, reply) => {
       GROUP BY 1
       ORDER BY filings DESC
       LIMIT 15
-    ), top_cities AS (
-      SELECT
-        worksite_city AS city,
-        worksite_state AS state,
-        COUNT(*)::int AS filings
-      FROM filtered
-      WHERE worksite_city IS NOT NULL AND worksite_city <> ''
-      GROUP BY 1,2
-      ORDER BY filings DESC
-      LIMIT 15
-    ), trend AS (
-      SELECT
-        fiscal_year AS year,
-        COUNT(*)::int AS filings,
-        SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS approvals
-      FROM base_filtered
-      GROUP BY 1
-      ORDER BY year ASC
     )
     SELECT
       (SELECT row_to_json(totals) FROM totals) AS totals,
       (SELECT COALESCE(json_agg(top_companies), '[]'::json) FROM top_companies) AS top_companies,
-      (SELECT COALESCE(json_agg(top_states), '[]'::json) FROM top_states) AS top_states,
-      (SELECT COALESCE(json_agg(top_cities), '[]'::json) FROM top_cities) AS top_cities,
-      (SELECT COALESCE(json_agg(trend), '[]'::json) FROM trend);
+      (SELECT COALESCE(json_agg(top_states), '[]'::json) FROM top_states) AS top_states;
   `;
 
-  const bind = q.year ? [params.slug, q.year] : [params.slug];
-  const res = await pool.query(sql, bind);
-  if (!res.rows?.[0]?.totals) return reply.code(404).send({ success: false, error: 'not_found' });
-  return reply.send(ok(res.rows[0]));
+  const trendSql = `
+    SELECT
+      fiscal_year AS year,
+      COUNT(*)::int AS filings,
+      SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS approvals
+    FROM lca_raw
+    WHERE job_title = $1
+    GROUP BY fiscal_year
+    ORDER BY fiscal_year ASC;
+  `;
+
+  const bind = q.year ? [title, q.year] : [title];
+  const cachedTrend = getCached<any[]>(trendCacheKey);
+  const [summaryRes, trend] = await Promise.all([
+    pool.query(summarySql, bind),
+    cachedTrend ? Promise.resolve(cachedTrend) : pool.query(trendSql, [title]).then((res) => setCached(trendCacheKey, res.rows)),
+  ]);
+
+  if (!summaryRes.rows?.[0]?.totals) return reply.code(404).send({ success: false, error: 'not_found' });
+
+  const payload = {
+    ...summaryRes.rows[0],
+    trend,
+  };
+
+  return sendCachedOk(reply, setCached(cacheKey, payload));
 });
 
 app.get('/api/v1/rankings', async (req, reply) => {
   const cacheKey = `rankings:${JSON.stringify(req.query)}`;
-  const cached = cache.get(cacheKey);
-  if (cached) return reply.send(ok(cached));
+  const cached = getCached<any[]>(cacheKey);
+  if (cached) return sendCachedOk(reply, cached);
 
   const q = z
     .object({
@@ -482,8 +520,10 @@ app.get('/api/v1/rankings', async (req, reply) => {
 
   const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
   
-  // Default to min 100 approvals when sorting by salary to avoid outliers.
-  let minApprovals = q.minApprovals ?? (q.sortBy === 'salary' ? 100 : 0);
+  // Default to min 100 approvals when sorting by salary to avoid outliers,
+  // BUT if searching for a specific company or job title, lower it to 1 to show niche results.
+  const isSpecificSearch = !!(q.company || q.job_title);
+  let minApprovals = q.minApprovals ?? (q.sortBy === 'salary' && !isSpecificSearch ? 100 : 0);
   
   if (minApprovals > 0) {
     params.push(minApprovals);
@@ -526,14 +566,13 @@ app.get('/api/v1/rankings', async (req, reply) => {
   `;
 
   const res = await pool.query(sql, params);
-  cache.set(cacheKey, res.rows);
-  return reply.send(ok(res.rows));
+  return sendCachedOk(reply, setCached(cacheKey, res.rows));
 });
 
 app.get('/api/v1/rankings/summary', async (req, reply) => {
   const cacheKey = `summary:${JSON.stringify(req.query)}`;
-  const cached = cache.get(cacheKey);
-  if (cached) return reply.send(ok(cached));
+  const cached = getCached<any>(cacheKey);
+  if (cached) return sendCachedOk(reply, cached);
 
   const q = z
     .object({
@@ -630,8 +669,7 @@ app.get('/api/v1/rankings/summary', async (req, reply) => {
     trend: trendRes.rows || []
   };
 
-  cache.set(cacheKey, finalData);
-  return reply.send(ok(finalData));
+  return sendCachedOk(reply, setCached(cacheKey, finalData));
 });
 
 

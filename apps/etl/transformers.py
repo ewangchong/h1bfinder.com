@@ -121,12 +121,17 @@ def drop_indexes(cur) -> None:
     cur.execute("DROP INDEX IF EXISTS idx_lca_raw_year;")
     cur.execute("DROP INDEX IF EXISTS idx_lca_raw_employer;")
     cur.execute("DROP INDEX IF EXISTS idx_lca_raw_case_number;")
+    cur.execute("DROP INDEX IF EXISTS idx_lca_raw_job_title_year_case_status;")
 
 def recreate_indexes(cur) -> None:
     print("Recreating indexes...")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_year ON lca_raw (fiscal_year);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_employer ON lca_raw (employer_name);")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_lca_raw_case_number ON lca_raw (case_number);")
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_lca_raw_job_title_year_case_status "
+        "ON lca_raw (job_title, fiscal_year) INCLUDE (case_status);"
+    )
 
 def load_excel_to_postgres(file_path: str, fiscal_year: int, cur=None) -> None:
     """Read DOL LCA xlsx file, align headers, drop PI, and stream dynamically to Postgres."""

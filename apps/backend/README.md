@@ -35,6 +35,15 @@ npm run dev
 
 The server will listen on port `8089` by default.
 
+To apply the SQL migrations in `migrations/` manually:
+
+```bash
+npm run build
+npm run migrate
+```
+
+The root `docker-compose.yml` also runs this migration step automatically before starting `backend`.
+
 ## API Endpoints
 
 - `GET /health`: Healthcheck.

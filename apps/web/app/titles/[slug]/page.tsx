@@ -2,12 +2,14 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 type Summary = {
-  totals: { title: string; filings: number; approvals: number; last_year: number };
-  top_companies: Array<{ company_slug: string | null; company_name: string; filings: number; approvals: number }>;
-  top_states: Array<{ state: string; filings: number }>;
-  top_cities: Array<{ city: string; state: string; filings: number }>;
-  trend: Array<{ year: number; filings: number; approvals: number }>;
+  totals?: { title: string; filings: number; approvals: number; last_year: number };
+  top_companies?: Array<{ company_slug: string | null; company_name: string; filings: number; approvals: number }>;
+  top_states?: Array<{ state: string; filings: number }>;
+  top_cities?: Array<{ city: string; state: string; filings: number }>;
+  trend?: Array<{ year: number; filings: number; approvals: number }>;
 };
+
+const API_REVALIDATE_SECONDS = 60 * 60;
 
 export async function generateMetadata({
   params,
@@ -28,7 +30,9 @@ async function getSummary(slug: string, year?: string): Promise<Summary> {
   const base = process.env.H1B_API_BASE_URL || 'http://127.0.0.1:3000';
   const sp = new URLSearchParams();
   if (year) sp.set('year', year);
-  const res = await fetch(`${base}/api/v1/titles/${slug}/summary?${sp.toString()}`, { cache: 'no-store' });
+  const res = await fetch(`${base}/api/v1/titles/${slug}/summary?${sp.toString()}`, {
+    next: { revalidate: API_REVALIDATE_SECONDS },
+  });
   if (res.status === 404) throw new Error('not_found');
   if (!res.ok) throw new Error(`Failed to load summary (${res.status})`);
   const json = await res.json();
@@ -46,7 +50,9 @@ export default async function TitlePage({
   const sp = await searchParams;
 
   const base = process.env.H1B_API_BASE_URL || 'http://127.0.0.1:3000';
-  const yearsRes = await fetch(`${base}/api/v1/meta/years`, { cache: 'no-store' });
+  const yearsRes = await fetch(`${base}/api/v1/meta/years`, {
+    next: { revalidate: API_REVALIDATE_SECONDS },
+  });
   const yearsJson = yearsRes.ok ? await yearsRes.json() : { data: ['2024'] };
   const years = (yearsJson.data as number[]).map(String);
 
@@ -65,18 +71,23 @@ export default async function TitlePage({
     );
   }
 
-  const filed = s.totals.filings || 0;
-  const approved = s.totals.approvals || 0;
+  const totals = s.totals ?? { title: slug.replace(/-/g, ' '), filings: 0, approvals: 0, last_year: Number(year) || 0 };
+  const topCompanies = s.top_companies ?? [];
+  const topStates = s.top_states ?? [];
+  const trend = s.trend ?? [];
+
+  const filed = totals.filings || 0;
+  const approved = totals.approvals || 0;
   const rate = filed > 0 ? approved / filed : null;
 
-  const titleYears = s.trend?.length > 0
-    ? [...s.trend].reverse().map(t => String(t.year))
+  const titleYears = trend.length > 0
+    ? [...trend].reverse().map(t => String(t.year))
     : years;
 
   return (
     <div>
       <div style={{ textAlign: 'center', padding: '18px 0 6px' }}>
-        <h1 style={{ margin: 0, fontSize: 34, letterSpacing: '-0.02em' }}>{s.totals.title.trim()}</h1>
+        <h1 style={{ margin: 0, fontSize: 34, letterSpacing: '-0.02em' }}>{totals.title.trim()}</h1>
         <p style={{ margin: '10px auto 0', maxWidth: 820, color: '#555', lineHeight: 1.6 }}>
           Role-level H1B sponsorship signals derived from public DOL LCA disclosure data. Not job postings.
         </p>
@@ -127,12 +138,12 @@ export default async function TitlePage({
         <Stat label="Approval rate" value={rate === null ? '—' : `${(rate * 100).toFixed(1)}%`} />
         <Stat label="Total filings" value={filed.toLocaleString()} />
         <Stat label="Total approvals" value={approved.toLocaleString()} />
-        <Stat label="Last FY" value={String(s.totals.last_year)} />
+        <Stat label="Last FY" value={String(totals.last_year)} />
       </div>
 
       <Section title="Top sponsors for this role">
         <div className="grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14 }}>
-          {s.top_companies.slice(0, 10).map((c) => (
+          {topCompanies.slice(0, 10).map((c) => (
             <div key={`${c.company_name}-${c.filings}`} style={cardStyle}>
               <div style={{ fontWeight: 800, overflowWrap: 'anywhere' }}>{c.company_name.trim()}</div>
               <div style={{ marginTop: 6, color: '#666', fontSize: 13 }}>
@@ -153,7 +164,7 @@ export default async function TitlePage({
         <Section title="Top states">
           <div style={cardStyle}>
             <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {s.top_states.map((x) => (
+              {topStates.map((x) => (
                 <li key={x.state} style={{ margin: '6px 0' }}>
                   <b>{x.state}</b> — {x.filings.toLocaleString()}
                 </li>
@@ -165,7 +176,7 @@ export default async function TitlePage({
         <Section title="Trend (FY2020–FY2024)">
           <div style={cardStyle}>
             <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {s.trend.map((t) => (
+              {trend.map((t) => (
                 <li key={t.year} style={{ margin: '6px 0' }}>
                   FY{t.year}: <b>{t.filings.toLocaleString()}</b> filings / <b>{t.approvals.toLocaleString()}</b> approvals
                 </li>

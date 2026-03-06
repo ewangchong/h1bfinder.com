@@ -28,6 +28,18 @@ services:
       - PORT=8089
       - NODE_ENV=production
     depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+
+  migrate:
+    build:
+      context: ./apps/backend
+    environment:
+      - DATABASE_URL=postgres://h1b:${POSTGRES_PASSWORD:-postgres}@db:5432/h1bfriend
+    command: ["sh", "-lc", "node dist/migrate.js"]
+    depends_on:
       db:
         condition: service_healthy
 
@@ -39,7 +51,7 @@ services:
       - "3000"
     environment:
       - H1B_API_BASE_URL=http://backend:8089
-      - NEXT_PUBLIC_SITE_URL=https://h1bfriendly.com
+      - NEXT_PUBLIC_SITE_URL=https://h1bfriend.com
     depends_on:
       - backend
 

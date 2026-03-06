@@ -7,6 +7,8 @@ export const metadata: Metadata = {
   alternates: { canonical: '/titles' },
 };
 
+const API_REVALIDATE_SECONDS = 60 * 60;
+
 type TitleRow = {
   slug: string;
   title: string;
@@ -20,7 +22,9 @@ async function getTitles(params?: { year?: string; limit?: number }): Promise<Ti
   sp.set('limit', String(params?.limit ?? 100));
 
   const base = process.env.H1B_API_BASE_URL || 'http://127.0.0.1:3000';
-  const res = await fetch(`${base}/api/v1/titles?${sp.toString()}`, { cache: 'no-store' });
+  const res = await fetch(`${base}/api/v1/titles?${sp.toString()}`, {
+    next: { revalidate: API_REVALIDATE_SECONDS },
+  });
   if (!res.ok) throw new Error(`Failed to load titles (${res.status})`);
   const json = await res.json();
   return json.data;
@@ -34,7 +38,9 @@ export default async function TitlesIndex({
   const sp = await searchParams;
 
   const base = process.env.H1B_API_BASE_URL || 'http://127.0.0.1:3000';
-  const yearsRes = await fetch(`${base}/api/v1/meta/years`, { cache: 'no-store' });
+  const yearsRes = await fetch(`${base}/api/v1/meta/years`, {
+    next: { revalidate: API_REVALIDATE_SECONDS },
+  });
   const yearsJson = yearsRes.ok ? await yearsRes.json() : { data: ['2024'] };
   const years = (yearsJson.data as number[]).map(String);
 
