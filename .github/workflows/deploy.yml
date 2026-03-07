@@ -11,12 +11,42 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  prepare:
+    name: Prepare
     runs-on:
       - self-hosted
       - ec2
       - prod
-    timeout-minutes: 30
+    timeout-minutes: 10
+
+    steps:
+      - name: Sync repository
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd ~/h1bfriend
+
+          git fetch origin main
+          git reset --hard origin/main
+
+      - name: Validate Docker Compose config
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd ~/h1bfriend
+
+          docker compose config >/dev/null
+
+  deploy:
+    name: Deploy
+    needs: prepare
+    runs-on:
+      - self-hosted
+      - ec2
+      - prod
+    timeout-minutes: 20
 
     steps:
       - name: Sync repository
@@ -46,6 +76,26 @@ jobs:
           cd ~/h1bfriend
 
           docker compose up -d --build
+
+  verify:
+    name: Verify
+    needs: deploy
+    runs-on:
+      - self-hosted
+      - ec2
+      - prod
+    timeout-minutes: 15
+
+    steps:
+      - name: Sync repository
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd ~/h1bfriend
+
+          git fetch origin main
+          git reset --hard origin/main
 
       - name: Verify deployment health
         shell: bash
