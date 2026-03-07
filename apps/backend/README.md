@@ -20,6 +20,11 @@ This is a high-performance REST API built with Fastify and Node.js, designed to 
 
    Provide your actual database credentials inside `.env`.
 
+   For chatbot support, also set:
+   - `GEMINI_API_KEY`
+   - `GEMINI_MODEL` (default: `gemini-2.0-flash`)
+   - `CHAT_RATE_LIMIT_PER_MIN` (default: `20`)
+
 2. Install dependencies:
    ```bash
    npm install
@@ -52,6 +57,7 @@ The root `docker-compose.yml` also runs this migration step automatically before
 - `GET /api/v1/companies/slug/:slug`: Fetch company details by SEO-friendly slug.
 - `GET /api/v1/rankings/summary`: aggregate statistics for rankings.
 - `GET /api/v1/debug/cache`: Monitor LRU cache usage and hits.
+- `POST /api/v1/chat`: Gemini-powered H1B chatbot endpoint with database-grounded RAG context.
 
 ## Observability
 

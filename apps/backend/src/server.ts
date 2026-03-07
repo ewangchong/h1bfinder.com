@@ -11,11 +11,17 @@ import { slugify } from './slug.js';
 const envSchema = z.object({
   PORT: z.coerce.number().default(8089),
   DATABASE_URL: z.string().default('postgres://h1b:change_me@127.0.0.1:5432/h1bfriend'),
+  GEMINI_API_KEY: z.string().optional(),
+  GEMINI_MODEL: z.string().default('gemini-2.0-flash'),
+  CHAT_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).max(120).default(20),
 });
 
 const env = envSchema.parse({
   PORT: process.env.PORT,
   DATABASE_URL: process.env.DATABASE_URL,
+  GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+  GEMINI_MODEL: process.env.GEMINI_MODEL,
+  CHAT_RATE_LIMIT_PER_MIN: process.env.CHAT_RATE_LIMIT_PER_MIN,
 });
 
 const pool = new Pool({ connectionString: env.DATABASE_URL });
@@ -51,6 +57,14 @@ const cache = new LRUCache<string, any>({
 
 const SHARED_CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-revalidate=86400';
 
+const CHAT_WINDOW_MS = 60_000;
+const chatRateLimiter = new Map<string, { count: number; windowStart: number }>();
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'with', 'from', 'this', 'that', 'what', 'when', 'where', 'which',
+  'about', 'have', 'has', 'had', 'into', 'your', 'visa', 'h1b', 'sponsor', 'sponsorship',
+  'companies', 'company', 'jobs', 'job', 'please', 'need', 'show', 'best', 'help'
+]);
+
 function getCached<T>(key: string): T | undefined {
   return cache.get(key) as T | undefined;
 }
@@ -75,6 +89,117 @@ function titleFromSlug(slug: string) {
     .filter(Boolean)
     .join(' ')
     .toUpperCase();
+}
+
+function isRateLimited(ip: string) {
+  const now = Date.now();
+  const record = chatRateLimiter.get(ip);
+
+  if (!record || now - record.windowStart >= CHAT_WINDOW_MS) {
+    chatRateLimiter.set(ip, { count: 1, windowStart: now });
+    return false;
+  }
+
+  if (record.count >= env.CHAT_RATE_LIMIT_PER_MIN) return true;
+
+  record.count += 1;
+  chatRateLimiter.set(ip, record);
+  return false;
+}
+
+function extractTokens(text: string) {
+  return Array.from(new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 3 && !STOP_WORDS.has(t))
+  )).slice(0, 8);
+}
+
+async function buildRagContext(question: string, year?: number) {
+  const latestYearRes = await pool.query('SELECT MAX(fiscal_year)::int AS y FROM lca_raw');
+  const selectedYear = year ?? latestYearRes.rows[0]?.y;
+
+  if (!selectedYear) {
+    return 'No data context available.';
+  }
+
+  const totalsRes = await pool.query(
+    `SELECT
+      COUNT(*)::int AS filings,
+      SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS approvals,
+      ROUND(AVG(${SANITY_WAGE_SQL}), 2)::numeric AS avg_salary
+     FROM lca_raw
+     WHERE fiscal_year = $1`,
+    [selectedYear]
+  );
+
+  const topCompaniesRes = await pool.query(
+    `SELECT name, h1b_applications_approved, h1b_applications_filed
+     FROM companies
+     WHERE last_h1b_filing_year = $1
+     ORDER BY h1b_applications_approved DESC NULLS LAST
+     LIMIT 10`,
+    [selectedYear]
+  );
+
+  const topTitlesRes = await pool.query(
+    `SELECT job_title AS title, COUNT(*)::int AS filings
+     FROM lca_raw
+     WHERE fiscal_year = $1
+       AND job_title IS NOT NULL
+       AND job_title <> ''
+     GROUP BY 1
+     ORDER BY filings DESC
+     LIMIT 10`,
+    [selectedYear]
+  );
+
+  const tokens = extractTokens(question);
+  let relevantCompanies: any[] = [];
+
+  if (tokens.length > 0) {
+    const patterns = tokens.map((t) => `%${t}%`);
+    const relevantRes = await pool.query(
+      `SELECT
+         employer_name_normalized AS company,
+         COUNT(*)::int AS filings,
+         SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS approvals,
+         ROUND(AVG(${SANITY_WAGE_SQL}), 2)::numeric AS avg_salary
+       FROM lca_raw
+       WHERE fiscal_year = $1
+         AND (
+           employer_name_normalized ILIKE ANY($2::text[])
+           OR job_title ILIKE ANY($2::text[])
+         )
+       GROUP BY 1
+       ORDER BY approvals DESC
+       LIMIT 8`,
+      [selectedYear, patterns]
+    );
+    relevantCompanies = relevantRes.rows;
+  }
+
+  const totals = totalsRes.rows[0] || { filings: 0, approvals: 0, avg_salary: null };
+  const topCompanies = topCompaniesRes.rows
+    .map((r) => `${r.name} (approvals: ${r.h1b_applications_approved ?? 0}, filings: ${r.h1b_applications_filed ?? 0})`)
+    .join('; ');
+  const topTitles = topTitlesRes.rows
+    .map((r) => `${r.title} (${r.filings})`)
+    .join('; ');
+  const relevant = relevantCompanies.length > 0
+    ? relevantCompanies.map((r) => `${r.company} (approvals: ${r.approvals}, filings: ${r.filings}, avg_salary: ${r.avg_salary ?? 'N/A'})`).join('; ')
+    : 'No highly relevant company matches found for the question tokens.';
+
+  return [
+    `Dataset year used: ${selectedYear}`,
+    `Year totals — filings: ${totals.filings ?? 0}, approvals: ${totals.approvals ?? 0}, avg_salary: ${totals.avg_salary ?? 'N/A'}`,
+    `Top companies (year): ${topCompanies || 'N/A'}`,
+    `Top job titles (year): ${topTitles || 'N/A'}`,
+    `Question-relevant slices: ${relevant}`,
+  ].join('\n');
 }
 
 const app = Fastify({ logger: true });
@@ -125,6 +250,84 @@ function page<T>(content: T[], pageNum: number, size: number, total: number): Pa
 }
 
 app.get('/health', async () => ({ ok: true }));
+
+app.post('/api/v1/chat', async (req, reply) => {
+  const ip = req.ip || 'unknown';
+  if (isRateLimited(ip)) {
+    return reply.code(429).send({ success: false, error: 'rate_limited', message: 'Too many chat requests. Please try again in a minute.' });
+  }
+
+  if (!env.GEMINI_API_KEY) {
+    req.log.error('GEMINI_API_KEY is missing');
+    return reply.code(500).send({ success: false, error: 'misconfigured', message: 'Chat is not configured on the server.' });
+  }
+
+  const body = z.object({
+    messages: z.array(z.object({ role: z.enum(['user', 'assistant']), text: z.string().trim().min(1).max(2000) })).min(1).max(12),
+    year: z.coerce.number().int().min(2000).max(2100).optional(),
+  }).parse(req.body ?? {});
+
+  const latestUserPrompt = [...body.messages].reverse().find((m) => m.role === 'user')?.text;
+  if (!latestUserPrompt) {
+    return reply.code(400).send({ success: false, error: 'invalid_input', message: 'At least one user message is required.' });
+  }
+
+  const ragContext = await buildRagContext(latestUserPrompt, body.year);
+
+  const systemInstruction = [
+    'You are an H1B data assistant for h1bfriend.com.',
+    'Always answer in English.',
+    'Use ONLY the provided data context for factual claims about approvals, filings, and salary.',
+    'If context is insufficient, clearly say what is missing and avoid making up numbers.',
+    'Keep answers practical and concise.'
+  ].join(' ');
+
+  const promptTranscript = body.messages
+    .map((m) => `${m.role.toUpperCase()}: ${m.text}`)
+    .join('\n');
+
+  const geminiResponse = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(env.GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [{ text: systemInstruction }],
+        },
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `Data context:\n${ragContext}\n\nConversation:\n${promptTranscript}\n\nAnswer the latest user request.`
+          }],
+        }],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 800,
+        },
+      }),
+    }
+  );
+
+  if (!geminiResponse.ok) {
+    const errText = await geminiResponse.text();
+    req.log.error({ status: geminiResponse.status, body: errText }, 'Gemini API failed');
+    return reply.code(502).send({ success: false, error: 'llm_upstream_error', message: 'Gemini API request failed.' });
+  }
+
+  const geminiJson: any = await geminiResponse.json();
+  const answer = geminiJson?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text || '').join('').trim();
+
+  if (!answer) {
+    return reply.code(502).send({ success: false, error: 'empty_llm_response', message: 'Gemini returned an empty response.' });
+  }
+
+  return reply.send(ok({
+    answer,
+    model: env.GEMINI_MODEL,
+    rag_year: body.year ?? null,
+  }));
+});
 
 app.get('/api/v1/meta/years', async (_req, reply) => {
   const cacheKey = 'meta:years';

@@ -27,6 +27,9 @@ services:
       - DATABASE_URL=postgres://h1b:${POSTGRES_PASSWORD:-change_me}@db:5432/h1bfriend
       - PORT=8089
       - NODE_ENV=production
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.0-flash}
+      - CHAT_RATE_LIMIT_PER_MIN=${CHAT_RATE_LIMIT_PER_MIN:-20}
     depends_on:
       migrate:
         condition: service_completed_successfully

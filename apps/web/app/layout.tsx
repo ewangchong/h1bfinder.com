@@ -16,6 +16,7 @@ const navItems = [
   { href: '/', label: 'Rankings' },
   { href: '/companies', label: 'Companies' },
   { href: '/titles', label: 'Titles' },
+  { href: '/chat', label: 'AI Chat' },
   { href: '/blog', label: 'Blog' },
 ] as const;
 
