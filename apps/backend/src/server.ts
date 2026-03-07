@@ -616,8 +616,8 @@ app.get('/api/v1/companies', async (req, reply) => {
   const total = totalRes.rows[0]?.c ?? 0;
   const direction = q.sortDirection;
   const orderBy = q.sortBy === 'name'
-    ? `company_name ${direction}`
-    : `h1b_applications_filed ${direction} NULLS LAST, company_name ASC`;
+    ? `name ${direction}`
+    : `h1b_applications_filed ${direction} NULLS LAST, name ASC`;
 
   params.push(q.size, offset);
 
