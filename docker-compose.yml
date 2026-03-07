@@ -30,7 +30,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
       - CHAT_RATE_LIMIT_PER_MIN=${CHAT_RATE_LIMIT_PER_MIN:-20}
-      - CHAT_ADMIN_TOKEN=${CHAT_ADMIN_TOKEN}
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
     depends_on:
       migrate:
         condition: service_completed_successfully
