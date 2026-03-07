@@ -20,9 +20,11 @@ export default async function CompanyDetail({
   const { slug } = await params;
   const sp = await searchParams;
 
+  const requestedYear = sp.year;
+
   let c;
   try {
-    c = await getCompanyBySlug(slug);
+    c = await getCompanyBySlug(slug, requestedYear);
   } catch (e: any) {
     return (
       <div>
@@ -137,7 +139,7 @@ export default async function CompanyDetail({
         </div>
 
         <div style={{ marginTop: 12, color: '#777', fontSize: 12, lineHeight: 1.5 }}>
-          FY{year} view. Data source: DOL LCA disclosure (FY2020–FY2024) aggregated by employer name. Not legal advice.
+          FY{year} view. Data source: DOL LCA disclosure (FY{companyYears[companyYears.length - 1] ?? 'N/A'}–FY{companyYears[0] ?? 'N/A'}) aggregated by employer name. Not legal advice.
         </div>
       </div>
 

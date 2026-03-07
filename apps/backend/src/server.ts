@@ -139,10 +139,24 @@ async function buildRagContext(question: string, year?: number) {
   );
 
   const topCompaniesRes = await pool.query(
-    `SELECT name, h1b_applications_approved, h1b_applications_filed
-     FROM companies
-     WHERE last_h1b_filing_year = $1
-     ORDER BY h1b_applications_approved DESC NULLS LAST
+    `WITH agg AS (
+       SELECT
+         employer_name_normalized AS employer_norm,
+         COUNT(*)::int AS filings,
+         SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS approvals
+       FROM lca_raw
+       WHERE fiscal_year = $1
+         AND employer_name_normalized IS NOT NULL
+         AND employer_name_normalized <> ''
+       GROUP BY 1
+     )
+     SELECT
+       COALESCE(c.name, agg.employer_norm) AS name,
+       agg.approvals AS h1b_applications_approved,
+       agg.filings AS h1b_applications_filed
+     FROM agg
+     LEFT JOIN companies c ON c.employer_name_normalized = agg.employer_norm
+     ORDER BY agg.approvals DESC NULLS LAST
      LIMIT 10`,
     [selectedYear]
   );
@@ -562,39 +576,86 @@ app.get('/api/v1/companies', async (req, reply) => {
     })
     .parse(req.query);
 
-  const offset = q.page * q.size;
+  const latestYearRes = await pool.query('SELECT MAX(fiscal_year)::int AS y FROM lca_raw');
+  const selectedYear = q.year ?? latestYearRes.rows[0]?.y;
+  if (!selectedYear) {
+    return sendCachedOk(reply, page([], q.page, q.size, 0));
+  }
 
-  const where: string[] = [];
-  const params: any[] = [];
+  const offset = q.page * q.size;
+  const params: any[] = [selectedYear];
+  const where: string[] = ['yr.fiscal_year = $1'];
 
   if (q.keyword) {
     params.push(`%${q.keyword}%`);
-    where.push(`name ILIKE $${params.length}`);
+    where.push(`COALESCE(c.name, yr.employer_norm) ILIKE $${params.length}`);
   }
 
-  if (q.year) {
-    params.push(q.year);
-    where.push(`last_h1b_filing_year = $${params.length}`);
-  }
-
-  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const whereSql = `WHERE ${where.join(' AND ')}`;
 
   const totalRes = await pool.query(
-    `SELECT COUNT(*)::int AS c FROM companies ${whereSql}`,
+    `WITH yr AS (
+       SELECT
+         employer_name_normalized AS employer_norm,
+         COUNT(*)::int AS h1b_applications_filed,
+         SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS h1b_applications_approved,
+         fiscal_year
+       FROM lca_raw
+       WHERE fiscal_year = $1
+         AND employer_name_normalized IS NOT NULL
+         AND employer_name_normalized <> ''
+       GROUP BY employer_name_normalized, fiscal_year
+     )
+     SELECT COUNT(*)::int AS c
+     FROM yr
+     LEFT JOIN companies c ON c.employer_name_normalized = yr.employer_norm
+     ${whereSql}`,
     params
   );
-  const total = totalRes.rows[0]?.c ?? 0;
 
+  const total = totalRes.rows[0]?.c ?? 0;
   const direction = q.sortDirection;
-  const orderBy =
-    q.sortBy === 'name'
-      ? `name ${direction}`
-      : `h1b_applications_filed ${direction} NULLS LAST, name ASC`;
+  const orderBy = q.sortBy === 'name'
+    ? `company_name ${direction}`
+    : `h1b_applications_filed ${direction} NULLS LAST, company_name ASC`;
 
   params.push(q.size, offset);
 
   const rowsRes = await pool.query(
-    `SELECT * FROM companies ${whereSql} ORDER BY ${orderBy} LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    `WITH yr AS (
+       SELECT
+         employer_name_normalized AS employer_norm,
+         COUNT(*)::int AS h1b_applications_filed,
+         SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS h1b_applications_approved,
+         fiscal_year
+       FROM lca_raw
+       WHERE fiscal_year = $1
+         AND employer_name_normalized IS NOT NULL
+         AND employer_name_normalized <> ''
+       GROUP BY employer_name_normalized, fiscal_year
+     )
+     SELECT
+       c.id,
+       c.slug,
+       COALESCE(c.name, yr.employer_norm) AS name,
+       c.domain,
+       c.website_url,
+       c.industry,
+       c.headquarters_city,
+       c.headquarters_state,
+       c.headquarters_country,
+       COALESCE(c.h1b_sponsorship_status, 'active') AS h1b_sponsorship_status,
+       c.h1b_sponsorship_confidence,
+       yr.h1b_applications_filed,
+       yr.h1b_applications_approved,
+       yr.fiscal_year AS last_h1b_filing_year,
+       c.active_job_count
+     FROM yr
+     LEFT JOIN companies c ON c.employer_name_normalized = yr.employer_norm
+     ${whereSql}
+     ORDER BY ${orderBy}
+     LIMIT $${params.length - 1}
+     OFFSET $${params.length}`,
     params
   );
 
@@ -611,13 +672,37 @@ app.get('/api/v1/companies/:id', async (req, reply) => {
 
 app.get('/api/v1/companies/slug/:slug', async (req, reply) => {
   const params = z.object({ slug: z.string().min(1) }).parse(req.params);
-  const cacheKey = `company:slug:${params.slug}`;
+  const q = z.object({ year: z.coerce.number().int().min(2000).max(2100).optional() }).parse(req.query ?? {});
+  const cacheKey = `company:slug:${params.slug}:${q.year ?? 'latest'}`;
   const cached = getCached<any>(cacheKey);
   if (cached) return sendCachedOk(reply, cached);
 
-  const res = await pool.query('SELECT * FROM companies WHERE slug=$1', [params.slug]);
-  if (res.rowCount === 0) return reply.code(404).send({ success: false, error: 'not_found' });
-  return sendCachedOk(reply, setCached(cacheKey, res.rows[0]));
+  const companyRes = await pool.query('SELECT * FROM companies WHERE slug=$1', [params.slug]);
+  if (companyRes.rowCount === 0) return reply.code(404).send({ success: false, error: 'not_found' });
+
+  const company = companyRes.rows[0];
+  const latestYearRes = await pool.query('SELECT MAX(fiscal_year)::int AS y FROM lca_raw');
+  const selectedYear = q.year ?? latestYearRes.rows[0]?.y ?? company.last_h1b_filing_year;
+
+  const yearAggRes = await pool.query(
+    `SELECT
+       COUNT(*)::int AS filed,
+       SUM(CASE WHEN case_status ILIKE 'CERTIFIED%' THEN 1 ELSE 0 END)::int AS approved
+     FROM lca_raw
+     WHERE employer_name_normalized = $1
+       AND fiscal_year = $2`,
+    [company.employer_name_normalized, selectedYear]
+  );
+
+  const yearAgg = yearAggRes.rows[0] || { filed: 0, approved: 0 };
+  const payload = {
+    ...company,
+    h1b_applications_filed: Number(yearAgg.filed ?? 0),
+    h1b_applications_approved: Number(yearAgg.approved ?? 0),
+    last_h1b_filing_year: selectedYear,
+  };
+
+  return sendCachedOk(reply, setCached(cacheKey, payload));
 });
 
 app.get('/api/v1/companies/slug/:slug/insights', async (req, reply) => {

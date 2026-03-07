@@ -123,8 +123,11 @@ export async function getCompanyById(id: string) {
   return data.data;
 }
 
-export async function getCompanyBySlug(slug: string) {
-  const data = await fetchJson<ApiEnvelope<Company>>(`/api/v1/companies/slug/${slug}`);
+export async function getCompanyBySlug(slug: string, year?: string) {
+  const sp = new URLSearchParams();
+  if (year) sp.set('year', year);
+  const qs = sp.toString();
+  const data = await fetchJson<ApiEnvelope<Company>>(`/api/v1/companies/slug/${slug}${qs ? `?${qs}` : ''}`);
   return data.data;
 }
 

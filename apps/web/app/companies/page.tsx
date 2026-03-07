@@ -92,7 +92,7 @@ export default async function CompaniesPage({
       <PaginationControls page={companies.page} totalPages={companies.total_pages} />
 
       <div style={{ marginTop: 18, color: '#777', fontSize: 12, lineHeight: 1.5 }}>
-        Data source: DOL LCA disclosure files (FY2020–FY2024) aggregated by employer name. Not legal advice.
+        Data source: DOL LCA disclosure files (FY{years[years.length - 1] ?? 'N/A'}–FY{years[0] ?? 'N/A'}) aggregated by employer name. Not legal advice.
       </div>
 
       <style>{`

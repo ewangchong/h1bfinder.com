@@ -173,7 +173,7 @@ export default async function TitlePage({
           </div>
         </Section>
 
-        <Section title="Trend (FY2020–FY2024)">
+        <Section title={`Trend (FY${titleYears[titleYears.length - 1] ?? 'N/A'}–FY${titleYears[0] ?? 'N/A'})`}>
           <div style={cardStyle}>
             <ul style={{ margin: 0, paddingLeft: 18 }}>
               {trend.map((t) => (
@@ -187,7 +187,7 @@ export default async function TitlePage({
       </div>
 
       <div style={{ marginTop: 18, color: '#777', fontSize: 12, lineHeight: 1.5 }}>
-        Data source: DOL LCA disclosure (FY2020–FY2024). Aggregated by normalized job title. Not legal advice.
+        Data source: DOL LCA disclosure (FY{titleYears[titleYears.length - 1] ?? 'N/A'}–FY{titleYears[0] ?? 'N/A'}). Aggregated by normalized job title. Not legal advice.
       </div>
 
       <style>{`
