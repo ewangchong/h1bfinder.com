@@ -638,18 +638,11 @@ app.get('/api/v1/companies', async (req, reply) => {
        c.id,
        c.slug,
        COALESCE(c.name, yr.employer_norm) AS name,
-       c.domain,
-       c.website_url,
-       c.industry,
-       c.headquarters_city,
-       c.headquarters_state,
-       c.headquarters_country,
        COALESCE(c.h1b_sponsorship_status, 'active') AS h1b_sponsorship_status,
        c.h1b_sponsorship_confidence,
        yr.h1b_applications_filed,
        yr.h1b_applications_approved,
-       yr.fiscal_year AS last_h1b_filing_year,
-       c.active_job_count
+       yr.fiscal_year AS last_h1b_filing_year
      FROM yr
      LEFT JOIN companies c ON c.employer_name_normalized = yr.employer_norm
      ${whereSql}
