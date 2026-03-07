@@ -24,6 +24,7 @@ This is a high-performance REST API built with Fastify and Node.js, designed to 
    - `GEMINI_API_KEY`
    - `GEMINI_MODEL` (default: `gemini-2.5-flash`)
    - `CHAT_RATE_LIMIT_PER_MIN` (default: `20`)
+   - `CHAT_ADMIN_TOKEN` (required to access chat logs endpoint)
 
 2. Install dependencies:
    ```bash
@@ -53,7 +54,7 @@ The root `docker-compose.yml` also runs this migration step automatically before
 
 - `GET /health`: Healthcheck.
 - `GET /api/v1/chat/status`: Returns whether chat is enabled plus the configured Gemini model and rate limit.
-- `GET /api/v1/chat/logs`: Returns recent chat logs in reverse chronological order, with pagination and optional `success=true|false` filtering.
+- `GET /api/v1/chat/logs`: Admin-only endpoint. Returns recent chat logs in reverse chronological order, with pagination and optional `success=true|false` filtering. Requires `x-admin-token` and responds with `Cache-Control: private, no-store`.
 - `GET /api/v1/meta/years`: Retrieve available fiscal years.
 - `GET /api/v1/companies`: Paginated company list and search.
 - `GET /api/v1/companies/slug/:slug`: Fetch company details by SEO-friendly slug.

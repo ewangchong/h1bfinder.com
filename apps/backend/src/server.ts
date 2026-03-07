@@ -14,6 +14,7 @@ const envSchema = z.object({
   GEMINI_API_KEY: z.string().optional(),
   GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
   CHAT_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).max(120).default(20),
+  CHAT_ADMIN_TOKEN: z.string().optional(),
 });
 
 const env = envSchema.parse({
@@ -22,6 +23,7 @@ const env = envSchema.parse({
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   GEMINI_MODEL: process.env.GEMINI_MODEL,
   CHAT_RATE_LIMIT_PER_MIN: process.env.CHAT_RATE_LIMIT_PER_MIN,
+  CHAT_ADMIN_TOKEN: process.env.CHAT_ADMIN_TOKEN,
 });
 
 const pool = new Pool({ connectionString: env.DATABASE_URL });
@@ -330,6 +332,13 @@ app.get('/api/v1/chat/status', async () => {
 });
 
 app.get('/api/v1/chat/logs', async (req, reply) => {
+  const providedToken = String(req.headers['x-admin-token'] || '');
+  if (!env.CHAT_ADMIN_TOKEN || providedToken !== env.CHAT_ADMIN_TOKEN) {
+    return reply.code(401).send({ success: false, error: 'unauthorized', message: 'Admin token required.' });
+  }
+
+  reply.header('Cache-Control', 'private, no-store, max-age=0');
+
   const q = z.object({
     page: z.coerce.number().int().min(0).default(0),
     size: z.coerce.number().int().min(1).max(200).default(50),
@@ -377,10 +386,9 @@ app.get('/api/v1/chat/logs', async (req, reply) => {
     params
   );
 
-  return sendCachedOk(
-    reply,
+  return reply.send(ok(
     page(rowsRes.rows, q.page, q.size, totalRes.rows[0]?.total ?? 0)
-  );
+  ));
 });
 
 app.post('/api/v1/chat', async (req, reply) => {
