@@ -3,7 +3,7 @@ import React from 'react';
 import './globals.css';
 import Script from 'next/script';
 import Link from 'next/link';
-
+import TranslateToggle from './TranslateToggle';
 
 const navLink: React.CSSProperties = {
   textDecoration: 'none',
@@ -81,10 +81,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ))}
             </nav>
 
-            <div className="nav-mobile">
-              <Link href="/blog" style={navLink}>
-                Blog
-              </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <TranslateToggle />
+              <div className="nav-mobile">
+                <Link href="/blog" style={navLink}>
+                  Blog
+                </Link>
+              </div>
             </div>
           </div>
         </header>
