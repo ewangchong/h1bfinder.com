@@ -132,6 +132,26 @@ a {
   text-align: left;
   box-shadow: 0 24px 80px rgba(37, 99, 235, 0.28);
   cursor: pointer;
+  position: relative;
+}
+
+.home-chat-trigger-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.home-chat-trigger-close:hover {
+  background: rgba(15, 23, 42, 0.55);
 }
 
 .home-chat-trigger-kicker {
