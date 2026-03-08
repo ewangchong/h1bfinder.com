@@ -28,7 +28,7 @@ export default function PlanPage() {
   const [targetRole, setTargetRole] = useState('Software Engineer');
   const [targetState, setTargetState] = useState('CA');
   const [targetCity, setTargetCity] = useState('');
-  const [yearsExperience, setYearsExperience] = useState(0);
+  const [yearsExperienceInput, setYearsExperienceInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [plan, setPlan] = useState<PlanResponse | null>(null);
@@ -54,7 +54,7 @@ export default function PlanPage() {
           target_role: targetRole.trim(),
           target_state: targetState.trim() || undefined,
           target_city: targetCity.trim() || undefined,
-          years_experience: yearsExperience,
+          years_experience: Math.max(0, Math.min(30, Number.parseInt(yearsExperienceInput || '0', 10) || 0)),
         }),
       });
 
@@ -96,7 +96,7 @@ export default function PlanPage() {
         </label>
         <label style={{ display: 'grid', gap: 6 }}>
           <span style={{ fontSize: 13, color: '#3f3f46' }}>Years experience</span>
-          <input type="number" min={0} max={30} value={yearsExperience} onChange={(e) => setYearsExperience(Number(e.target.value || 0))} style={inputStyle} />
+          <input type="number" min={0} max={30} value={yearsExperienceInput} onChange={(e) => setYearsExperienceInput(e.target.value)} placeholder="0" style={inputStyle} />
         </label>
 
         <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 10 }}>
