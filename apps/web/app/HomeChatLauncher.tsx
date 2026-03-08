@@ -8,14 +8,6 @@ export default function HomeChatLauncher() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    try {
-      setDismissed(localStorage.getItem('home_chat_dismissed') === '1');
-    } catch {
-      // ignore localStorage errors
-    }
-  }, []);
-
-  useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
@@ -24,11 +16,6 @@ export default function HomeChatLauncher() {
 
   function closeLauncher() {
     setDismissed(true);
-    try {
-      localStorage.setItem('home_chat_dismissed', '1');
-    } catch {
-      // ignore localStorage errors
-    }
   }
 
   if (dismissed) return null;
