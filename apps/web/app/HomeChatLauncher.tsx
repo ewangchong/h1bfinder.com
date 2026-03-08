@@ -22,7 +22,11 @@ export default function HomeChatLauncher() {
 
   return (
     <>
-      <button type="button" className="home-chat-trigger" onClick={() => setOpen(true)}>
+      <button type="button" className="home-chat-trigger" onClick={() => setOpen(true)} aria-label="Open AI chat">
+        <span className="home-chat-bubble-icon" aria-hidden>
+          💬
+        </span>
+        <span className="home-chat-bubble-label">AI Chat</span>
         <span
           className="home-chat-trigger-close"
           role="button"
@@ -42,8 +46,6 @@ export default function HomeChatLauncher() {
         >
           ×
         </span>
-        <span className="home-chat-trigger-kicker">AI Chat</span>
-        <span className="home-chat-trigger-title">Ask about sponsors, salaries, and trends</span>
       </button>
 
       {open ? (
