@@ -22,6 +22,14 @@ function setLanguage(lang: 'en' | 'zh-CN') {
   return true;
 }
 
+function setGoogTransCookie(lang: 'en' | 'zh-CN') {
+  if (typeof document === 'undefined') return;
+  const value = lang === 'zh-CN' ? '/en/zh-CN' : '/en/en';
+  const host = window.location.hostname;
+  document.cookie = `googtrans=${value}; path=/`;
+  document.cookie = `googtrans=${value}; domain=.${host}; path=/`;
+}
+
 export default function TranslateToggle() {
   const [ready, setReady] = useState(false);
   const [isZh, setIsZh] = useState(false);
@@ -62,7 +70,15 @@ export default function TranslateToggle() {
   function handleToggle() {
     const next = isZh ? 'en' : 'zh-CN';
     const ok = setLanguage(next);
-    if (ok) setIsZh(next === 'zh-CN');
+    setGoogTransCookie(next);
+
+    if (ok) {
+      setIsZh(next === 'zh-CN');
+      return;
+    }
+
+    // Fallback: if Google widget is delayed/blocked, cookie + reload usually applies translation.
+    window.location.reload();
   }
 
   return (
