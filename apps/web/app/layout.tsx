@@ -105,7 +105,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <div style={{ fontSize: 12, lineHeight: 1.5 }}>
                   <p style={{ margin: '0 0 6px 0' }}>Data is sourced from the public disclosure files of the United States Department of Labor (DOL). This website is not affiliated with, endorsed by, or sponsored by the U.S. Government or the Department of Labor.</p>
                   <p style={{ margin: '0 0 6px 0' }}>All information is provided "as is" for informational purposes only. We make no representations or warranties regarding the accuracy or completeness of the data.</p>
-                  <p style={{ margin: 0 }}>An LCA filing does not represent an actual job opening or guarantee visa approval.</p>
+                  <p style={{ margin: '0 0 6px 0' }}>An LCA filing does not represent an actual job opening or guarantee visa approval.</p>
+                  <p style={{ margin: 0 }}>
+                    This website is built with AI assistance. Found an issue or have suggestions? Please open an issue on GitHub:{' '}
+                    <a href="https://github.com/ewangchong/h1bfriendly.com" target="_blank" rel="noreferrer" style={{ color: '#93C5FD' }}>
+                      github.com/ewangchong/h1bfriendly.com
+                    </a>
+                  </p>
                 </div>
               </div>
             </div>
