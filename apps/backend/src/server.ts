@@ -317,6 +317,53 @@ async function logChatEvent(event: {
   }
 }
 
+function normalizeReferralCode(raw?: string | null) {
+  if (!raw) return null;
+  const cleaned = raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 64);
+  return cleaned || null;
+}
+
+function normalizeSessionKey(raw?: string | null) {
+  if (!raw) return null;
+  const cleaned = raw.trim().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+  return cleaned || null;
+}
+
+async function logGrowthEvent(event: {
+  eventName: 'referral_visit' | 'referral_signup' | 'referral_plan_generated';
+  referralCode?: string | null;
+  sessionKey?: string | null;
+  sourcePage?: string | null;
+  metadata?: Record<string, unknown>;
+  clientIp: string;
+  userAgent?: string;
+}) {
+  try {
+    await pool.query(
+      `INSERT INTO growth_events (
+        event_name,
+        referral_code,
+        session_key,
+        source_page,
+        metadata,
+        client_ip,
+        user_agent
+      ) VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)`,
+      [
+        event.eventName,
+        normalizeReferralCode(event.referralCode),
+        normalizeSessionKey(event.sessionKey),
+        event.sourcePage?.slice(0, 120) ?? null,
+        JSON.stringify(event.metadata ?? {}),
+        event.clientIp,
+        (event.userAgent || '').slice(0, 255) || null,
+      ]
+    );
+  } catch (error) {
+    app.log.error({ error }, 'Failed to persist growth event');
+  }
+}
+
 app.get('/health', async () => ({ ok: true }));
 
 app.get('/api/v1/chat/status', async () => {
@@ -389,6 +436,28 @@ app.get('/api/v1/chat/logs', async (req, reply) => {
   return reply.send(ok(
     page(rowsRes.rows, q.page, q.size, totalRes.rows[0]?.total ?? 0)
   ));
+});
+
+app.post('/api/v1/referral/track', async (req, reply) => {
+  const body = z.object({
+    event_name: z.enum(['referral_visit', 'referral_signup', 'referral_plan_generated']),
+    referral_code: z.string().trim().max(64).optional().or(z.literal('')),
+    session_key: z.string().trim().max(80).optional().or(z.literal('')),
+    source_page: z.string().trim().max(120).optional().or(z.literal('')),
+    metadata: z.record(z.any()).optional(),
+  }).parse(req.body ?? {});
+
+  await logGrowthEvent({
+    eventName: body.event_name,
+    referralCode: body.referral_code || null,
+    sessionKey: body.session_key || null,
+    sourcePage: body.source_page || null,
+    metadata: body.metadata ?? {},
+    clientIp: req.ip || 'unknown',
+    userAgent: String(req.headers['user-agent'] || ''),
+  });
+
+  return reply.send(ok({ tracked: true }));
 });
 
 app.post('/api/v1/job-alert-subscriptions', async (req, reply) => {
@@ -1183,6 +1252,8 @@ app.post('/api/v1/plan/generate', async (req, reply) => {
     target_city: z.string().trim().min(2).max(80).optional(),
     years_experience: z.coerce.number().int().min(0).max(30).default(0),
     year: z.coerce.number().int().min(2000).max(2100).optional(),
+    referral_code: z.string().trim().max(64).optional().or(z.literal('')),
+    session_key: z.string().trim().max(80).optional().or(z.literal('')),
   }).parse(req.body ?? {});
 
   const latestYearRes = await pool.query('SELECT MAX(fiscal_year)::int AS y FROM lca_raw');
@@ -1275,6 +1346,21 @@ app.post('/api/v1/plan/generate', async (req, reply) => {
     'Day 5: Follow up on submitted applications and recruiter outreach',
     'Day 7: Review response quality and rebalance sponsor/title targets',
   ];
+
+  await logGrowthEvent({
+    eventName: 'referral_plan_generated',
+    referralCode: body.referral_code || null,
+    sessionKey: body.session_key || null,
+    sourcePage: '/plan',
+    metadata: {
+      target_role: body.target_role,
+      target_state: body.target_state?.toUpperCase() ?? null,
+      target_city: body.target_city ?? null,
+      year: selectedYear,
+    },
+    clientIp: req.ip || 'unknown',
+    userAgent: String(req.headers['user-agent'] || ''),
+  });
 
   return reply.send(ok({
     year: selectedYear,
