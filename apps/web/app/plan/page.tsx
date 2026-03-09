@@ -142,18 +142,43 @@ export default function PlanPage() {
     ].join(' ');
   }
 
+  async function copyToClipboard(value: string) {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+
+    if (typeof document === 'undefined') return false;
+
+    const textarea = document.createElement('textarea');
+    textarea.value = value;
+    textarea.setAttribute('readonly', 'true');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.pointerEvents = 'none';
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    try {
+      return document.execCommand('copy');
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  }
+
   async function onCopyShareText() {
     const text = buildShareText();
     if (!text) return;
 
     try {
-      await navigator.clipboard.writeText(text);
-      setShareNotice('Share text copied.');
-      if ((window as any).gtag) {
+      const copied = await copyToClipboard(text);
+      setShareNotice(copied ? 'Share text copied to clipboard.' : 'Could not auto-copy. Please use the share box below.');
+      if (copied && (window as any).gtag) {
         (window as any).gtag('event', 'plan_shared', { method: 'copy_text' });
       }
     } catch {
-      setShareNotice('Copy failed. Please copy manually.');
+      setShareNotice('Copy failed. Please use the share box below.');
     }
   }
 
@@ -162,21 +187,31 @@ export default function PlanPage() {
     const text = buildShareText();
 
     try {
-      if (navigator.share) {
+      if (typeof navigator.share === 'function') {
         await navigator.share({
           title: 'My H1B Plan',
           text,
           url: shareUrl,
         });
+        setShareNotice('Native share sheet opened.');
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'plan_shared', { method: 'native_share' });
+        }
+        return;
+      }
+
+      const copied = await copyToClipboard(shareUrl);
+      setShareNotice(copied ? 'Share link copied to clipboard.' : 'Sharing is not supported here. Please copy the link from the box below.');
+      if (copied && (window as any).gtag) {
+        (window as any).gtag('event', 'plan_shared', { method: 'copy_link' });
+      }
+    } catch (error: any) {
+      const name = error?.name || '';
+      if (name === 'AbortError') {
+        setShareNotice('Share canceled. You can still copy the link below.');
       } else {
-        await navigator.clipboard.writeText(shareUrl);
+        setShareNotice('Sharing is unavailable in this browser. Please copy the link below.');
       }
-      setShareNotice('Share link ready.');
-      if ((window as any).gtag) {
-        (window as any).gtag('event', 'plan_shared', { method: typeof navigator.share === 'function' ? 'native_share' : 'copy_link' });
-      }
-    } catch {
-      setShareNotice('Share canceled or unavailable.');
     }
   }
 
@@ -255,8 +290,15 @@ export default function PlanPage() {
               <div style={{ marginTop: 4, color: '#6d28d9', fontSize: 13 }}>
                 Suggested titles: {plan.suggested_titles.slice(0, 3).map((t) => t.title).join(' · ') || 'N/A'}
               </div>
-              <div style={{ marginTop: 8, color: '#7c3aed', fontSize: 12 }}>
-                {buildShareUrl()}
+              <div style={{ marginTop: 12 }}>
+                <div style={{ color: '#6d28d9', fontSize: 12, marginBottom: 6 }}>Direct share link</div>
+                <input
+                  readOnly
+                  value={buildShareUrl()}
+                  onFocus={(e) => e.currentTarget.select()}
+                  aria-label="Direct share link"
+                  style={{ ...inputStyle, background: '#fff', color: '#5b21b6', fontSize: 12 }}
+                />
               </div>
             </div>
           </div>
