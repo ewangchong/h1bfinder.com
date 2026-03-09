@@ -33,6 +33,7 @@ export default function PlanPage() {
   const [error, setError] = useState('');
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [refCode, setRefCode] = useState('');
+  const [sessionKey, setSessionKey] = useState('');
   const [shareNotice, setShareNotice] = useState('');
 
   const canSubmit = useMemo(() => targetRole.trim().length >= 2, [targetRole]);
@@ -42,10 +43,34 @@ export default function PlanPage() {
     const sp = new URLSearchParams(window.location.search);
     const refFromUrl = sp.get('ref')?.trim() || '';
     const refFromStorage = window.localStorage.getItem('h1bfriend_ref_code') || '';
-    const resolvedRef = refFromUrl || refFromStorage;
+    const resolvedRef = (refFromUrl || refFromStorage).toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 64);
+
+    const existingSession = window.localStorage.getItem('h1bfriend_ref_session') || '';
+    const generatedSession = `s_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    const resolvedSession = (existingSession || generatedSession).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80);
+
+    setSessionKey(resolvedSession);
+    window.localStorage.setItem('h1bfriend_ref_session', resolvedSession);
+
     if (resolvedRef) {
       setRefCode(resolvedRef);
       window.localStorage.setItem('h1bfriend_ref_code', resolvedRef);
+
+      const visitTrackKey = `h1bfriend_ref_visit_${resolvedSession}_${resolvedRef}`;
+      if (!window.localStorage.getItem(visitTrackKey)) {
+        fetch('/api/v1/referral/track', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            event_name: 'referral_visit',
+            referral_code: resolvedRef,
+            session_key: resolvedSession,
+            source_page: '/plan',
+            metadata: { landing_path: window.location.pathname },
+          }),
+        }).catch(() => undefined);
+        window.localStorage.setItem(visitTrackKey, '1');
+      }
     }
   }, []);
 
@@ -75,6 +100,8 @@ export default function PlanPage() {
           target_state: targetState.trim() || undefined,
           target_city: targetCity.trim() || undefined,
           years_experience: Math.max(0, Math.min(30, Number.parseInt(yearsExperienceInput || '0', 10) || 0)),
+          referral_code: refCode || undefined,
+          session_key: sessionKey || undefined,
         }),
       });
 
