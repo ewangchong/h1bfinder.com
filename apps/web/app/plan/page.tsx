@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type PlanResponse = {
   year: number;
@@ -32,8 +32,28 @@ export default function PlanPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [plan, setPlan] = useState<PlanResponse | null>(null);
+  const [refCode, setRefCode] = useState('');
+  const [shareNotice, setShareNotice] = useState('');
 
   const canSubmit = useMemo(() => targetRole.trim().length >= 2, [targetRole]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const sp = new URLSearchParams(window.location.search);
+    const refFromUrl = sp.get('ref')?.trim() || '';
+    const refFromStorage = window.localStorage.getItem('h1bfriend_ref_code') || '';
+    const resolvedRef = refFromUrl || refFromStorage;
+    if (resolvedRef) {
+      setRefCode(resolvedRef);
+      window.localStorage.setItem('h1bfriend_ref_code', resolvedRef);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!shareNotice) return;
+    const t = window.setTimeout(() => setShareNotice(''), 2500);
+    return () => window.clearTimeout(t);
+  }, [shareNotice]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,6 +91,64 @@ export default function PlanPage() {
       setError(err?.message || 'Failed to generate plan.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  function buildShareUrl() {
+    if (typeof window === 'undefined') return 'https://h1bfriendly.com/plan';
+    const url = new URL('/plan', window.location.origin);
+    if (refCode) url.searchParams.set('ref', refCode);
+    return url.toString();
+  }
+
+  function buildShareText() {
+    if (!plan) return '';
+    const topCompany = plan.recommendations[0]?.company_name || 'top H1B sponsors';
+    const title = plan.profile.target_role || 'my target role';
+    const location = [plan.profile.target_city, plan.profile.target_state].filter(Boolean).join(', ');
+    return [
+      `I generated my H1B action plan for ${title}${location ? ` in ${location}` : ''}.`,
+      `Top sponsor match: ${topCompany}.`,
+      'Try your own personalized plan:',
+      buildShareUrl(),
+    ].join(' ');
+  }
+
+  async function onCopyShareText() {
+    const text = buildShareText();
+    if (!text) return;
+
+    try {
+      await navigator.clipboard.writeText(text);
+      setShareNotice('Share text copied.');
+      if ((window as any).gtag) {
+        (window as any).gtag('event', 'plan_shared', { method: 'copy_text' });
+      }
+    } catch {
+      setShareNotice('Copy failed. Please copy manually.');
+    }
+  }
+
+  async function onShareLink() {
+    const shareUrl = buildShareUrl();
+    const text = buildShareText();
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: 'My H1B Plan',
+          text,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+      }
+      setShareNotice('Share link ready.');
+      if ((window as any).gtag) {
+        (window as any).gtag('event', 'plan_shared', { method: typeof navigator.share === 'function' ? 'native_share' : 'copy_link' });
+      }
+    } catch {
+      setShareNotice('Share canceled or unavailable.');
     }
   }
 
@@ -115,6 +193,43 @@ export default function PlanPage() {
 
       {plan ? (
         <div style={{ marginTop: 16, display: 'grid', gap: 12 }}>
+          <div style={shareCardStyle}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+              <div>
+                <h2 style={{ margin: '0 0 6px' }}>Share this plan</h2>
+                <p style={{ margin: 0, color: '#52525b', fontSize: 13 }}>
+                  Built for {plan.profile.target_role}
+                  {plan.profile.target_city || plan.profile.target_state
+                    ? ` · ${[plan.profile.target_city, plan.profile.target_state].filter(Boolean).join(', ')}`
+                    : ''}
+                  . No personal/sensitive details included.
+                </p>
+                <p style={{ margin: '6px 0 0', color: '#71717a', fontSize: 12 }}>
+                  Referral: {refCode ? refCode : 'none'}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button type="button" style={secondaryBtnStyle} onClick={onCopyShareText}>Copy Share Text</button>
+                <button type="button" style={btnStyle} onClick={onShareLink}>Share Link</button>
+              </div>
+            </div>
+
+            {shareNotice ? <div style={{ marginTop: 10, fontSize: 13, color: '#4338ca' }}>{shareNotice}</div> : null}
+
+            <div style={{ marginTop: 12, borderRadius: 12, border: '1px solid #ddd6fe', background: '#faf5ff', padding: 12 }}>
+              <div style={{ fontWeight: 800, color: '#4c1d95' }}>H1B Plan Snapshot (safe to screenshot)</div>
+              <div style={{ marginTop: 6, color: '#5b21b6', fontSize: 14 }}>
+                Top sponsors: {plan.recommendations.slice(0, 3).map((r) => r.company_name).join(' · ') || 'N/A'}
+              </div>
+              <div style={{ marginTop: 4, color: '#6d28d9', fontSize: 13 }}>
+                Suggested titles: {plan.suggested_titles.slice(0, 3).map((t) => t.title).join(' · ') || 'N/A'}
+              </div>
+              <div style={{ marginTop: 8, color: '#7c3aed', fontSize: 12 }}>
+                {buildShareUrl()}
+              </div>
+            </div>
+          </div>
+
           <div style={cardStyle}>
             <h2 style={{ margin: '0 0 6px' }}>Top Target Sponsors (FY{plan.year})</h2>
             {plan.recommendations.map((r, idx) => (
@@ -170,9 +285,25 @@ const btnStyle: React.CSSProperties = {
   cursor: 'pointer',
 };
 
+const secondaryBtnStyle: React.CSSProperties = {
+  border: '1px solid #c7d2fe',
+  background: '#eef2ff',
+  color: '#3730a3',
+  borderRadius: 10,
+  padding: '10px 14px',
+  fontWeight: 700,
+  cursor: 'pointer',
+};
+
 const cardStyle: React.CSSProperties = {
   border: '1px solid #e4e4e7',
   borderRadius: 14,
   padding: 14,
   background: '#fff',
+};
+
+const shareCardStyle: React.CSSProperties = {
+  ...cardStyle,
+  border: '1px solid #ddd6fe',
+  background: 'linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%)',
 };
