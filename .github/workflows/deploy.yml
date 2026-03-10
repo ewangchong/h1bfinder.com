@@ -175,3 +175,11 @@ jobs:
           check_url "Companies" "${SITE_URL}/companies"
           check_url "Titles" "${SITE_URL}/titles"
           check_url "Chat status" "${SITE_URL}/api/v1/chat/status"
+
+      - name: Run deploy test plan (filter matrix + API smoke)
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cd ~/h1bfriend
+          ./scripts/deploy-test-plan.sh
