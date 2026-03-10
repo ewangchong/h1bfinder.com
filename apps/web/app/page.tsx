@@ -32,6 +32,11 @@ export default async function RankingsPage({
   const year = sp.year || years[0] || '2025';
   const currentView = sp.view || 'rankings';
 
+  // State for performance-optimized tab switching in 2GB RAM env
+  // We use URL-based switching to avoid heavy client-side state for larger data sets
+  const isRankingsView = currentView === 'rankings';
+  const isExplorerView = currentView === 'explorer';
+
   const limitNum = sp.limit ? parseInt(sp.limit, 10) : 10;
   const minAppsNum = sp.minApprovals !== undefined ? parseInt(sp.minApprovals, 10) : undefined;
 
@@ -102,7 +107,7 @@ export default async function RankingsPage({
           WebkitTextFillColor: 'transparent',
           lineHeight: 1.05
         }}>
-          H1B Friendly: The Power Source for Your AI Career Agent
+          H1B Friendly：你的 AI 求职引擎数据底座
         </h1>
         <p style={{
           margin: '20px auto 0',
@@ -112,10 +117,10 @@ export default async function RankingsPage({
           fontSize: 'clamp(18px, 2.5vw, 22px)',
           fontWeight: 500
         }}>
-          Grounded in 4M+ records from DOL FY2025. Stop searching, start automating—bring verified H1B insights directly into your OpenClaw workspace.
+          基于 DOL FY2025 超过 400 万条真实记录。少做检索，多做决策——把可验证的 H1B 洞察直接接入你的 OpenClaw 工作流。
         </p>
 
-        {/* OpenClaw Integration Tile */}
+        {/* OpenClaw Integration Tile / 极速上手区 */}
         <div style={{
           marginTop: 40,
           background: '#09090b',
@@ -130,19 +135,41 @@ export default async function RankingsPage({
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
             <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
-            <span style={{ color: '#a1a1aa', fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Ready to automate?</span>
+            <span style={{ color: '#a1a1aa', fontSize: 13, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase' }}>OpenClaw 极速上手</span>
           </div>
           <div style={{ background: '#18181b', padding: 16, borderRadius: 12, fontFamily: 'monospace', fontSize: 14, color: '#e4e4e7', border: '1px solid #3f3f46' }}>
-            <div style={{ color: '#a1a1aa', marginBottom: 4 }}># 1. Install the skill</div>
+            <div style={{ color: '#a1a1aa', marginBottom: 4 }}># 1. 安装技能</div>
             <div style={{ color: '#4f46e5', fontWeight: 700 }}>openclaw skill install h1b-finder</div>
-            <div style={{ color: '#a1a1aa', marginTop: 12, marginBottom: 4 }}># 2. Ask your agent</div>
-            <div style={{ fontStyle: 'italic' }}>&quot;Which companies in NYC offer the highest H1B salaries for Product Managers?&quot;</div>
+            <div style={{ color: '#a1a1aa', marginTop: 12, marginBottom: 4 }}># 2. 直接下达需求</div>
+            <div style={{ fontStyle: 'italic' }}>&quot;帮我找 NYC Product Manager 岗位里 H1B 薪资最高的公司&quot;</div>
           </div>
           <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-             <Link href="/plan" style={{ color: '#fff', background: '#4f46e5', padding: '10px 20px', borderRadius: 12, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>Get AI Action Plan</Link>
-             <span style={{ color: '#71717a', fontSize: 12 }}>API Status: Operational · Grounded in DOL FY2025</span>
+             <Link href="/plan" style={{ color: '#fff', background: '#4f46e5', padding: '10px 20px', borderRadius: 12, textDecoration: 'none', fontWeight: 700, fontSize: 14 }}>获取 AI 行动方案</Link>
+             <span style={{ color: '#71717a', fontSize: 12 }}>API 状态：Operational · 基于 DOL FY2025</span>
           </div>
         </div>
+      </div>
+
+      {/* Legal Footer / 合规底栏 */}
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '24px 16px', 
+        borderTop: '1px solid #e4e4e7', 
+        marginTop: 32,
+        color: '#71717a',
+        fontSize: 13
+      }}>
+        <div style={{ marginBottom: 8, fontWeight: 600 }}>
+          H1B Friendly © 2026 · AI Ready Data Source
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
+          <Link href="/legal/tos.md" target="_blank" style={{ color: '#71717a', textDecoration: 'none' }}>服务条款</Link>
+          <Link href="/legal/privacy.md" target="_blank" style={{ color: '#71717a', textDecoration: 'none' }}>隐私政策</Link>
+          <a href="mailto:h1bfriendly@gmail.com" style={{ color: '#71717a', textDecoration: 'none' }}>联系法务</a>
+        </div>
+        <p style={{ marginTop: 12, fontSize: 11, maxWidth: 600, margin: '12px auto 0', lineHeight: 1.5 }}>
+          免责声明：本站数据源自 DOL 公开记录，不构成法律建议。AI 技能 `h1b-finder` 为开源工具，用户需对本地运行结果负责。
+        </p>
       </div>
 
       {/* Tabs Navigation */}
@@ -176,7 +203,8 @@ export default async function RankingsPage({
       </div>
 
       <div style={{ padding: '0 16px' }}>
-        {currentView === 'rankings' ? (
+        {/* Conditional rendering for memory performance (2GB limit) */}
+        {isRankingsView && (
           <div style={{ display: 'grid', gap: 24 }}>
             <div id="rankings">
               <RankingsControls defaultYear={year} years={displayYears} titles={titles} />
@@ -219,7 +247,9 @@ export default async function RankingsPage({
                 </Link>
             </div>
           </div>
-        ) : (
+        )}
+        
+        {isExplorerView && (
           <div style={{ minHeight: '50vh' }}>
             <div style={{ background: '#f4f4f5', padding: '40px 20px', borderRadius: 24, textAlign: 'center', border: '1px dashed #d4d4d8' }}>
               <h2 style={{ margin: '0 0 8px', fontWeight: 900 }}>Company Explorer</h2>
@@ -234,7 +264,7 @@ export default async function RankingsPage({
           </div>
         )}
 
-        {summary && currentView === 'rankings' && (
+        {summary && isRankingsView && (
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',

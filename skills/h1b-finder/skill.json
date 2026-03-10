@@ -1,11 +1,17 @@
 {
   "name": "h1b-finder",
   "slug": "h1b-finder",
-  "version": "1.0.0",
-  "description": "The first Agent-Ready H1B search tool. Query 4M+ LCA records for FY2025 directly from your AI agent.",
-  "author": "ewangchong",
+  "version": "1.0.1",
+  "description": "The official Agent-Ready H1B search tool for h1bfriend.com. Query 4M+ LCA records for FY2025 directly from your AI agent.",
+  "author": "h1bfriend.com",
   "license": "MIT",
-  "tags": ["h1b", "jobs", "visa", "data", "search"],
-  "homepage": "https://h1bfriendly.com",
+  "tags": [
+    "h1b",
+    "jobs",
+    "visa",
+    "data",
+    "search"
+  ],
+  "homepage": "https://h1bfriend.com",
   "repository": "https://github.com/ewangchong/h1bfriendly.com"
 }
