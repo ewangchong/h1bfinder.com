@@ -33,7 +33,7 @@ async function getTitles(params?: { year?: string; limit?: number }): Promise<Ti
 export default async function TitlesIndex({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string }>;
+  searchParams: Promise<{ year?: string; keyword?: string }>;
 }) {
   const sp = await searchParams;
 
@@ -49,6 +49,10 @@ export default async function TitlesIndex({
   let rows: TitleRow[] = [];
   try {
     rows = await getTitles({ year, limit: 120 });
+    if (sp.keyword?.trim()) {
+      const kw = sp.keyword.trim().toLowerCase();
+      rows = rows.filter((r) => r.title.toLowerCase().includes(kw));
+    }
   } catch (e: any) {
     return (
       <div>

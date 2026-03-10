@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import HomeChatLauncher from './HomeChatLauncher';
+import HomeQuickSearch from './HomeQuickSearch';
 
 export const metadata: Metadata = {
   title: 'H1B Finder: The AI Data Source for Your Career',
@@ -101,6 +102,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <HomeQuickSearch />
 
       <section
         style={{
