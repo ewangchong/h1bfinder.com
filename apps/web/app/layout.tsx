@@ -22,20 +22,20 @@ const navItems = [
 ] as const;
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://h1bfriend.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://h1bfinder.com'),
   title: {
-    default: 'H1B Friendly Jobs & Sponsors | H1B Friend',
-    template: '%s | H1B Friend',
+    default: 'H1B Finder | Verified H1B Sponsors & Salaries',
+    template: '%s | H1B Finder',
   },
   description:
-    'Find H1B sponsorship jobs and explore H1B-friendly companies with verified public sponsorship data.',
+    'Search 4M+ official H1B sponsorship records. Find H1B-friendly companies and salary data verified by H1B Finder.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'H1B Friend',
+    title: 'H1B Finder',
     description:
-      'Find H1B sponsorship jobs and explore H1B-friendly companies with verified public sponsorship data.',
+      'Search 4M+ official H1B sponsorship records. Find H1B-friendly companies and salary data verified by H1B Finder.',
     type: 'website',
     url: '/',
   },
@@ -70,7 +70,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="header-inner">
             <Link href="/" style={{ fontWeight: 800, textDecoration: 'none', color: '#111', display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ width: 26, height: 26, borderRadius: 8, background: '#4F46E5', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 12 }}>H1</span>
-              <span>H1B Friendly</span>
+              <span>H1B Finder</span>
             </Link>
 
             <nav className="nav-desktop">
@@ -98,7 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div style={{ maxWidth: 1100, margin: '0 auto', padding: '18px 16px', fontSize: 13, lineHeight: 1.6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ maxWidth: 520 }}>
-                <div style={{ fontWeight: 800, color: '#fff' }}>H1B Friendly</div>
+                <div style={{ fontWeight: 800, color: '#fff' }}>H1B Finder</div>
                 <div style={{ marginTop: 6, color: '#9CA3AF' }}>
                   Find H1B sponsorship jobs and opportunities with companies that have a track record of sponsoring international talent.
                 </div>
@@ -111,16 +111,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <p style={{ margin: '0 0 6px 0' }}>An LCA filing does not represent an actual job opening or guarantee visa approval.</p>
                   <p style={{ margin: 0 }}>
                     This website is built with AI assistance. Found an issue or have suggestions? Please open an issue on GitHub:{' '}
-                    <a href="https://github.com/ewangchong/h1bfriendly.com" target="_blank" rel="noreferrer" style={{ color: '#93C5FD' }}>
-                      github.com/ewangchong/h1bfriendly.com
+                    <a href="https://github.com/ewangchong/h1bfinder.com" target="_blank" rel="noreferrer" style={{ color: '#93C5FD' }}>
+                      github.com/ewangchong/h1bfinder.com
                     </a>
                   </p>
                 </div>
               </div>
             </div>
             <div style={{ marginTop: 14, color: '#6B7280', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-              <div>© {new Date().getFullYear()} H1B Friendly</div>
-              <div>Contact: <a href="mailto:h1bfriendly@gmail.com" style={{ color: '#6B7280', textDecoration: 'underline' }}>h1bfriendly@gmail.com</a></div>
+              <div>© {new Date().getFullYear()} H1B Finder</div>
+              <div>Contact: <a href="mailto:contact@h1bfinder.com" style={{ color: '#6B7280', textDecoration: 'underline' }}>contact@h1bfinder.com</a></div>
             </div>
           </div>
         </footer>

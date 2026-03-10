@@ -1,4 +1,4 @@
-# Reddit FAQ & Response Guide: H1B Friendly
+# Reddit FAQ & Response Guide: H1B Finder
 
 Use these responses to handle common questions/objections on r/h1b.
 

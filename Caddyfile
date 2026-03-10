@@ -1,8 +1,12 @@
-h1bfriendly.com, www.h1bfriendly.com {
-    redir https://h1bfriend.com{uri} permanent
+h1bfinder.com, www.h1bfinder.com {
+    redir https://h1bfinder.com{uri} permanent
 }
 
-h1bfriend.com, www.h1bfriend.com {
+h1bfinder.com, www.h1bfinder.com {
+    redir https://h1bfinder.com{uri} permanent
+}
+
+h1bfinder.com, www.h1bfinder.com {
     encode zstd gzip
 
     handle /api/* {

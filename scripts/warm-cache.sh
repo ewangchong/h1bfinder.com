@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-SITE_URL="${SITE_URL:-https://h1bfriend.com}"
-HOST_NAME="${HOST_NAME:-h1bfriend.com}"
+SITE_URL="${SITE_URL:-https://h1bfinder.com}"
+HOST_NAME="${HOST_NAME:-h1bfinder.com}"
 BACKEND_HEALTH_URL="${BACKEND_HEALTH_URL:-http://127.0.0.1:8089/health}"
 YEARS_URL="${YEARS_URL:-${SITE_URL}/api/v1/meta/years}"
 CURL_RETRIES="${CURL_RETRIES:-20}"

@@ -1,7 +1,7 @@
 # Product Gap Analysis — International Student Job-Seeker Journey
 
 Date: 2026-03-07
-Context: "If I were an international student looking for H1B jobs, what would I think when opening h1bfriend.com, and what needs are unmet?"
+Context: "If I were an international student looking for H1B jobs, what would I think when opening h1bfinder.com, and what needs are unmet?"
 
 ## 1) What users think on first visit
 

@@ -1,14 +1,14 @@
 ---
 name: h1b-finder
-description: H1B employer and salary intelligence based on official h1bfriend.com data (4M+ DOL records, incl. FY2025)｜基于 h1bfriend.com 官方数据的 H1B 雇主与薪资情报工具（400万+ DOL 记录，含 FY2025）
+description: H1B employer and salary intelligence based on official h1bfinder.com data (4M+ DOL records, incl. FY2025)｜基于 h1bfinder.com 官方数据的 H1B 雇主与薪资情报工具（400万+ DOL 记录，含 FY2025）
 metadata:
   {
     "openclaw": {
-      "requires": { "apis": ["h1bfriend.com"] },
+      "requires": { "apis": ["h1bfinder.com"] },
       "recommend": { "agents": ["engineering", "marketing", "legal", "finance"] },
       "version": "1.0.1",
-      "author": "h1bfriend.com",
-      "homepage": "https://h1bfriend.com"
+      "author": "h1bfinder.com",
+      "homepage": "https://h1bfinder.com"
     }
   }
 ---
@@ -16,8 +16,8 @@ metadata:
 # H1B Finder / H1B 智能检索
 
 ## What it is / 这是什么
-**H1B Finder** is the official skill from [h1bfriend.com](https://h1bfriend.com) for AI-assisted H1B sponsor research.  
-**H1B Finder** 是 [h1bfriend.com](https://h1bfriend.com) 官方技能，用于 AI 驱动的 H1B 雇主与薪资分析。
+**H1B Finder** is the official skill from [h1bfinder.com](https://h1bfinder.com) for AI-assisted H1B sponsor research.  
+**H1B Finder** 是 [h1bfinder.com](https://h1bfinder.com) 官方技能，用于 AI 驱动的 H1B 雇主与薪资分析。
 
 It grounds answers in **4M+ real DOL disclosure records** (including FY2025 updates), so your agent can produce data-backed insights instead of generic advice.  
 它基于 **400万+ 真实 DOL 披露记录**（含 FY2025 更新），让 Agent 给出“有数据依据”的结论，而不是泛泛建议。
@@ -57,8 +57,8 @@ It grounds answers in **4M+ real DOL disclosure records** (including FY2025 upda
 > 说明：最终数值会随实时查询时间窗和筛选条件变化。
 
 ## Data & API notes / 数据与接口说明
-This skill queries h1bfriend’s structured API layer in real time and returns normalized fields for analysis-friendly outputs.  
-本技能实时查询 h1bfriend 的结构化 API，并返回标准化字段，便于 AI 做统计、对比与总结。
+This skill queries H1B Finder’s structured API layer in real time and returns normalized fields for analysis-friendly outputs.  
+本技能实时查询 H1B Finder 的结构化 API，并返回标准化字段，便于 AI 做统计、对比与总结。
 
 Typical query dimensions include: `employer`, `job_title`, `city/state`, `fiscal_year`, `case_status`.  
 常用查询维度包括：`employer`、`job_title`、`city/state`、`fiscal_year`、`case_status`。
@@ -87,6 +87,6 @@ npx clawhub install h1b-finder
   本技能用于公开劳工数据分析，不应用于处理个人敏感隐私数据。
 
 ## Official links / 官方链接
-- Website: https://h1bfriend.com
-- Terms: https://h1bfriend.com/legal/tos.md
-- Privacy: https://h1bfriend.com/legal/privacy.md
+- Website: https://h1bfinder.com
+- Terms: https://h1bfinder.com/legal/tos.md
+- Privacy: https://h1bfinder.com/legal/privacy.md

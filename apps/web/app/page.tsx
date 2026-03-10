@@ -6,7 +6,7 @@ import RankingsChart from './RankingsChart';
 import HomeChatLauncher from './HomeChatLauncher';
 
 export const metadata: Metadata = {
-  title: 'H1B Friendly: The Power Source for Your AI Career Agent',
+  title: 'H1B Finder: The Power Source for Your AI Career Agent',
   description: 'Grounded in 4M+ records from DOL FY2025. Bring verified H1B insights directly into your OpenClaw workspace.',
   keywords: ['h1b', 'h1b sponsor', 'h1b friendly', 'h1b database', 'h1b jobs', 'h1b visa', 'openclaw', 'ai agent'],
   alternates: { canonical: '/' },
@@ -70,7 +70,7 @@ export default async function RankingsPage({
   } catch (e: any) {
     return (
       <div style={{ padding: 20, textAlign: 'center' }}>
-        <h1 style={{ margin: 0 }}>H1B Friendly</h1>
+        <h1 style={{ margin: 0 }}>H1B Finder</h1>
         <p style={{ color: '#ef4444' }}>API Connection Error. Verify H1B_API_BASE_URL.</p>
         <pre style={{ whiteSpace: 'pre-wrap', color: '#71717a', fontSize: 12 }}>{String(e?.message || e)}</pre>
       </div>
@@ -107,7 +107,7 @@ export default async function RankingsPage({
           WebkitTextFillColor: 'transparent',
           lineHeight: 1.05
         }}>
-          H1B Friendly：你的 AI 求职引擎数据底座
+          H1B Finder：你的 AI 求职引擎数据底座
         </h1>
         <p style={{
           margin: '20px auto 0',
@@ -160,12 +160,12 @@ export default async function RankingsPage({
         fontSize: 13
       }}>
         <div style={{ marginBottom: 8, fontWeight: 600 }}>
-          H1B Friendly © 2026 · AI Ready Data Source
+          H1B Finder © 2026 · AI Ready Data Source
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
           <Link href="/legal/tos.md" target="_blank" style={{ color: '#71717a', textDecoration: 'none' }}>服务条款</Link>
           <Link href="/legal/privacy.md" target="_blank" style={{ color: '#71717a', textDecoration: 'none' }}>隐私政策</Link>
-          <a href="mailto:h1bfriendly@gmail.com" style={{ color: '#71717a', textDecoration: 'none' }}>联系法务</a>
+          <a href="mailto:contact@h1bfinder.com" style={{ color: '#71717a', textDecoration: 'none' }}>联系法务</a>
         </div>
         <p style={{ marginTop: 12, fontSize: 11, maxWidth: 600, margin: '12px auto 0', lineHeight: 1.5 }}>
           免责声明：本站数据源自 DOL 公开记录，不构成法律建议。AI 技能 `h1b-finder` 为开源工具，用户需对本地运行结果负责。

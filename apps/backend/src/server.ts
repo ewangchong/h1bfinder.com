@@ -654,7 +654,7 @@ app.post('/api/v1/chat', async (req, reply) => {
   const ragContext = await buildRagContext(latestUserPrompt, body.year);
 
   const systemInstruction = [
-    'You are an H1B data assistant for h1bfriend.com.',
+    'You are an H1B data assistant for h1bfinder.com.',
     'Always answer in English.',
     'Use ONLY the provided data context for factual claims about approvals, filings, and salary.',
     'If context is insufficient, clearly say what is missing and avoid making up numbers.',

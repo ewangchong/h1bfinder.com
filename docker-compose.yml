@@ -55,7 +55,7 @@ services:
       - "3000"
     environment:
       - H1B_API_BASE_URL=http://backend:8089
-      - NEXT_PUBLIC_SITE_URL=https://h1bfriend.com
+      - NEXT_PUBLIC_SITE_URL=https://h1bfinder.com
     depends_on:
       - backend
 

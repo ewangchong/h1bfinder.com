@@ -129,8 +129,8 @@ CHAT_RATE_LIMIT_PER_MIN=20
 
 ```bash
 # Clone the repository
-git clone https://github.com/ewangchong/h1bfriendly.com.git
-cd h1bfriendly.com
+git clone https://github.com/ewangchong/h1bfinder.com.git
+cd h1bfinder.com
 
 docker compose up -d
 ```

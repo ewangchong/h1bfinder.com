@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://h1bfriend.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://h1bfinder.com';
   return {
     rules: {
       userAgent: '*',

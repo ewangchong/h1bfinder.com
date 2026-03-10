@@ -133,7 +133,7 @@ export default function PlanPage() {
   }
 
   function buildShareUrl() {
-    if (typeof window === 'undefined') return 'https://h1bfriendly.com/plan';
+    if (typeof window === 'undefined') return 'https://h1bfinder.com/plan';
     const url = new URL('/plan', window.location.origin);
     if (refCode) url.searchParams.set('ref', refCode);
     return url.toString();

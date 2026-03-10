@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { blogPosts } from './blog/posts';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://h1bfriend.com';
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://h1bfinder.com';
 
   return [
     { url: `${siteUrl}/`, lastModified: new Date() },
