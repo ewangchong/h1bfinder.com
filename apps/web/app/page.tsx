@@ -86,7 +86,9 @@ export default async function RankingsPage({
     titles = titlesResult.value.map(t => ({ title: t.title, slug: t.slug }));
   }
 
-  const yearsWithData = summary?.trend?.filter(t => t.filings > 0).map(t => String(t.year)) || [];
+  const yearsWithData = ((summary?.trend as Array<{ year: number; filings: number }> | undefined)
+    ?.filter((t) => t.filings > 0)
+    .map((t) => String(t.year))) || [];
   const displayYears = (yearsWithData.length > 0) ? yearsWithData : years;
 
   const getTabUrl = (view: string) => {
