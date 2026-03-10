@@ -39,34 +39,34 @@ export default async function RankingsPage({
   const limitNum = sp.limit ? parseInt(sp.limit, 10) : 10;
   const minAppsNum = sp.minApprovals !== undefined ? parseInt(sp.minApprovals, 10) : undefined;
 
-  let rankings;
-  let summary;
+  let rankings: any[] = [];
+  let summary: any = null;
   let titles: { title: string; slug: string }[] = [];
-  try {
-    const [rankingsData, summaryData, titlesData] = await Promise.all([
-      getRankings({
-        year,
-        state: sp.state,
-        city: sp.city,
-        job_title: sp.job_title,
-        company: sp.company,
-        sortBy: sp.sortBy,
-        limit: limitNum,
-        minApprovals: minAppsNum,
-      }),
-      getRankingsSummary({
-        year,
-        state: sp.state,
-        city: sp.city,
-        job_title: sp.job_title,
-        company: sp.company,
-      }),
-      getTitles({ year, limit: 50 })
-    ]);
-    rankings = rankingsData;
-    summary = summaryData;
-    titles = titlesData.map(t => ({ title: t.title, slug: t.slug }));
-  } catch (e: any) {
+
+  const [rankingsResult, summaryResult, titlesResult] = await Promise.allSettled([
+    getRankings({
+      year,
+      state: sp.state,
+      city: sp.city,
+      job_title: sp.job_title,
+      company: sp.company,
+      sortBy: sp.sortBy,
+      limit: limitNum,
+      minApprovals: minAppsNum,
+    }),
+    getRankingsSummary({
+      year,
+      state: sp.state,
+      city: sp.city,
+      job_title: sp.job_title,
+      company: sp.company,
+    }),
+    getTitles({ year, limit: 50 })
+  ]);
+
+  // Rankings are critical for this page. If rankings fail, show explicit error.
+  if (rankingsResult.status === 'rejected') {
+    const e: any = rankingsResult.reason;
     return (
       <div style={{ padding: 20, textAlign: 'center' }}>
         <h1 style={{ margin: 0 }}>H1B Finder</h1>
@@ -74,6 +74,16 @@ export default async function RankingsPage({
         <pre style={{ whiteSpace: 'pre-wrap', color: '#71717a', fontSize: 12 }}>{String(e?.message || e)}</pre>
       </div>
     );
+  }
+
+  rankings = rankingsResult.value;
+
+  // Summary and titles are optional; degrade gracefully if either endpoint is flaky.
+  if (summaryResult.status === 'fulfilled') {
+    summary = summaryResult.value;
+  }
+  if (titlesResult.status === 'fulfilled') {
+    titles = titlesResult.value.map(t => ({ title: t.title, slug: t.slug }));
   }
 
   const yearsWithData = summary?.trend?.filter(t => t.filings > 0).map(t => String(t.year)) || [];
