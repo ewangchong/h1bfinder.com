@@ -42,106 +42,137 @@ export default function CompaniesControls({
 
     const qs = nextSp.toString();
     router.push(qs ? `/companies?${qs}` : '/companies');
-    // Ensure server components re-fetch with new search params
     router.refresh();
   }
 
   return (
     <div
-      className="controls-row"
+      className="controls-container"
       style={{
         display: 'flex',
-        gap: 12,
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        margin: '18px 0 10px',
-        padding: '20px 24px',
-        borderRadius: 16,
+        flexDirection: 'column',
+        gap: 16,
+        margin: '0 0 32px',
+        padding: '24px',
+        borderRadius: 24,
         border: '1px solid #e2e8f0',
-        background: '#f8fafc',
-        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
-        maxWidth: 920,
+        background: '#ffffff',
+        boxShadow: '0 10px 40px -10px rgba(0,0,0,0.04)',
         width: '100%',
-        justifyContent: 'center',
       }}
     >
       <style>{`
+        .controls-row-top { display: flex; gap: 12px; align-items: stretch; flex-wrap: wrap; }
+        .controls-row-bottom { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; justify-content: space-between; margin-top: 4px; border-top: 1px solid #f1f5f9; padding-top: 16px; }
+        .search-input { flex: 1; min-width: 200px; padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 15px; color: #0f172a; outline: none; transition: border-color 0.2s; background: #f8fafc; }
+        .search-input:focus { border-color: #4f46e5; background: #fff; }
+        .btn-apply { padding: 12px 24px; border: none; background: #0f172a; color: #fff; border-radius: 12px; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+        .btn-apply:hover { background: #334155; }
+        .btn-clear { padding: 12px 20px; border: 1px solid #e2e8f0; background: #fff; border-radius: 12px; font-weight: 600; color: #475569; cursor: pointer; transition: background 0.2s; }
+        .btn-clear:hover { background: #f8fafc; }
+        .select-input { padding: 8px 32px 8px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 14px; font-weight: 500; color: #0f172a; background-color: #fff; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23475569%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E"); background-repeat: no-repeat; background-position: right 12px top 50%; background-size: 10px auto; }
+        .control-group { display: flex; align-items: center; gap: 8px; }
+        .control-label { color: #64748b; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        
         @media (max-width: 640px) {
-          .controls-row { width: 100%; justify-content: stretch; }
-          .controls-row input, .controls-row select, .controls-row button { width: 100% !important; min-width: 0 !important; }
-          .controls-row label { width: 100%; margin-left: 0 !important; }
+          .controls-row-top { flex-direction: column; }
+          .btn-apply, .btn-clear { width: 100%; }
+          .controls-row-bottom { flex-direction: column; align-items: flex-start; gap: 16px; }
+          .control-group { width: 100%; justify-content: space-between; }
         }
       `}</style>
-      <input
-        value={keyword}
-        onChange={(e) => setKeyword(e.target.value)}
-        placeholder="Search company name…"
-        style={{ padding: '10px 14px', border: '1px solid #ccc', borderRadius: 10, minWidth: 240, background: '#fff' }}
-      />
-      <button
-        onClick={() => setParams({ keyword: keyword.trim() || null })}
-        style={{ padding: '10px 14px', border: 'none', background: 'linear-gradient(to right, #4f46e5, #3b82f6)', color: '#fff', borderRadius: 10, fontWeight: 700 }}
-      >
-        Apply
-      </button>
-      <button
-        onClick={() => {
-          setKeyword('');
-          setParams({ keyword: null });
-        }}
-        style={{ padding: '10px 12px', border: '1px solid #d1d5db', background: '#fff', borderRadius: 10 }}
-      >
-        Clear
-      </button>
-
-      <label style={{ marginLeft: 8, color: '#555', fontSize: 14 }}>Sort</label>
-      <select
-        value={sortValue}
-        onChange={(e) => {
-          const [sortBy, sortDirection] = e.target.value.split(':') as ['filed' | 'name', 'ASC' | 'DESC'];
-          setParams({ sortBy, sortDirection });
-        }}
-        style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10 }}
-      >
-        <option value="filed:DESC">Filed count (high → low)</option>
-        <option value="filed:ASC">Filed count (low → high)</option>
-        <option value="name:ASC">Name (A → Z)</option>
-        <option value="name:DESC">Name (Z → A)</option>
-      </select>
-
-      <label style={{ marginLeft: 8, color: '#555', fontSize: 14 }}>Year</label>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {[...years].sort((a,b)=>Number(b)-Number(a)).map((y) => (
-          <button
-            key={y}
-            onClick={() => setParams({ year: y })}
-            style={{
-              padding: '8px 16px',
-              borderRadius: 20,
-              border: y === currentYear ? '1px solid #111' : '1px solid #ddd',
-              background: y === currentYear ? '#111' : '#fff',
-              color: y === currentYear ? '#fff' : '#444',
-              fontWeight: y === currentYear ? 700 : 500,
-              fontSize: 14,
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-            }}
-          >
-            {y}
+      
+      {/* Search Row */}
+      <div className="controls-row-top">
+        <input
+          className="search-input"
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              setParams({ keyword: keyword.trim() || null });
+            }
+          }}
+          placeholder="Search for an employer by name..."
+        />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button className="btn-apply" onClick={() => setParams({ keyword: keyword.trim() || null })}>
+            Search
           </button>
-        ))}
+          <button className="btn-clear" onClick={() => { setKeyword(''); setParams({ keyword: null }); }}>
+            Clear
+          </button>
+        </div>
       </div>
 
-      <label style={{ marginLeft: 8, color: '#555', fontSize: 14 }}>Page size</label>
-      <select
-        value={String(currentSize)}
-        onChange={(e) => setParams({ size: e.target.value })}
-        style={{ padding: '10px 12px', border: '1px solid #ddd', borderRadius: 10 }}
-      >
-        <option value="12">12</option>
-        <option value="24">24</option>
-        <option value="48">48</option>
-      </select>
+      {/* Filters Row */}
+      <div className="controls-row-bottom">
+        
+        {/* Years Group */}
+        <div className="control-group" style={{ flexWrap: 'wrap' }}>
+          <span className="control-label" style={{ marginRight: 4 }}>Data Year</span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {[...years].sort((a,b)=>Number(b)-Number(a)).map((y) => {
+              const isActive = y === currentYear;
+              return (
+                <button
+                  key={y}
+                  onClick={() => setParams({ year: y })}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 999,
+                    border: isActive ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                    background: isActive ? '#0f172a' : '#fff',
+                    color: isActive ? '#fff' : '#475569',
+                    fontWeight: isActive ? 700 : 600,
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  FY{y}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+          {/* Sort Group */}
+          <div className="control-group">
+            <span className="control-label">Sort</span>
+            <select
+              className="select-input"
+              value={sortValue}
+              onChange={(e) => {
+                const [sortBy, sortDirection] = e.target.value.split(':') as ['filed' | 'name', 'ASC' | 'DESC'];
+                setParams({ sortBy, sortDirection });
+              }}
+            >
+              <option value="filed:DESC">Most Filings</option>
+              <option value="filed:ASC">Fewest Filings</option>
+              <option value="name:ASC">Name (A-Z)</option>
+              <option value="name:DESC">Name (Z-A)</option>
+            </select>
+          </div>
+
+          {/* Page Size Group */}
+          <div className="control-group">
+            <span className="control-label">Show</span>
+            <select
+              className="select-input"
+              value={String(currentSize)}
+              onChange={(e) => setParams({ size: e.target.value })}
+            >
+              <option value="12">12</option>
+              <option value="24">24</option>
+              <option value="48">48</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }

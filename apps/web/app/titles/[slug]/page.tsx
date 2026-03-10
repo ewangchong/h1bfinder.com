@@ -21,7 +21,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const sp = await searchParams;
   return {
-    title: `${slug.replace(/-/g, ' ')} (H1B Signals)`,
+    title: `H1B Role: ${slug.replace(/-/g, ' ')}`,
     alternates: { canonical: `/titles/${slug}${sp.year ? `?year=${sp.year}` : ''}` },
   };
 }
@@ -53,20 +53,22 @@ export default async function TitlePage({
   const yearsRes = await fetch(`${base}/api/v1/meta/years`, {
     next: { revalidate: API_REVALIDATE_SECONDS },
   });
-  const yearsJson = yearsRes.ok ? await yearsRes.json() : { data: ['2024'] };
+  const yearsJson = yearsRes.ok ? await yearsRes.json() : { data: ['2025'] };
   const years = (yearsJson.data as number[]).map(String);
 
-  const year = sp.year || years[0] || '2024';
+  const year = sp.year || years[0] || '2025';
 
   let s: Summary;
   try {
     s = await getSummary(slug, year);
   } catch (e: any) {
     return (
-      <div>
-        <h1 style={{ margin: 0 }}>Role</h1>
-        <p style={{ color: '#b00' }}>Failed to load role summary.</p>
-        <pre style={{ whiteSpace: 'pre-wrap', color: '#555' }}>{String(e?.message || e)}</pre>
+      <div style={{ padding: '64px 20px', textAlign: 'center' }}>
+        <h1 style={{ color: '#0f172a', fontSize: 24, fontWeight: 800 }}>Role Summary</h1>
+        <p style={{ color: '#ef4444', marginTop: 12 }}>Failed to load role summary.</p>
+        <pre style={{ color: '#64748b', marginTop: 8, fontSize: 13, background: '#f8fafc', padding: 16, borderRadius: 12, display: 'inline-block' }}>
+          {String(e?.message || e)}
+        </pre>
       </div>
     );
   }
@@ -85,146 +87,262 @@ export default async function TitlePage({
     : years;
 
   return (
-    <div>
-      <div style={{ textAlign: 'center', padding: '18px 0 6px' }}>
-        <h1 style={{ margin: 0, fontSize: 34, letterSpacing: '-0.02em' }}>{totals.title.trim()}</h1>
-        <p style={{ margin: '10px auto 0', maxWidth: 820, color: '#555', lineHeight: 1.6 }}>
-          Role-level H1B sponsorship signals derived from public DOL LCA disclosure data. Not job postings.
-        </p>
-      </div>
+    <article style={{ maxWidth: 1080, margin: '0 auto', paddingBottom: 64 }}>
+      
+      {/* 1. Page Header / Hero */}
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '64px 20px 48px',
+        borderBottom: '1px solid #f1f5f9',
+        marginBottom: 32
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+          <div style={{
+            width: 72,
+            height: 72,
+            borderRadius: 20,
+            background: '#eff6ff',
+            display: 'grid',
+            placeItems: 'center',
+            color: '#2563eb',
+            border: '1px solid #bfdbfe',
+            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+          }}>
+             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+          </div>
+        </div>
+        
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: 'clamp(32px, 5vw, 48px)', 
+          letterSpacing: '-0.04em',
+          fontWeight: 900,
+          color: '#0f172a',
+          lineHeight: 1.1
+        }}>
+          {totals.title.trim()}
+        </h1>
+        
+        <div style={{ 
+          marginTop: 16, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          gap: 12,
+          flexWrap: 'wrap'
+        }}>
+          <span style={{ color: '#64748b', fontSize: 15, fontWeight: 500 }}>Demand Signal Breakdown</span>
+          <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbd5e1' }} />
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            padding: '4px 10px',
+            borderRadius: 999,
+            background: '#f0f9ff',
+            color: '#0369a1',
+            border: '1px solid #bae6fd',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            H1B Eligible Role
+          </span>
+        </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
-        <div
-          style={{
-            margin: '18px 0 10px',
-            padding: 12,
-            borderRadius: 14,
-            border: '1px solid #eee',
-            background: '#fff',
-            boxShadow: '0 1px 0 rgba(0,0,0,0.02)',
-            maxWidth: 920,
-            width: '100%',
-            display: 'flex',
-            gap: 12,
-            justifyContent: 'center',
-            alignItems: 'center',
+        {/* Year Toggle */}
+        <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: 8, 
+            padding: '6px', 
+            background: '#f8fafc', 
+            borderRadius: 999,
+            border: '1px solid #e2e8f0',
             flexWrap: 'wrap',
-          }}
-        >
-          <span style={{ color: '#666', fontSize: 14 }}>Year</span>
-          {titleYears.map((y) => (
-            <Link
-              key={y}
-              href={`/titles/${slug}?year=${y}`}
-              style={{
-                padding: '8px 10px',
-                borderRadius: 999,
-                border: '1px solid #eee',
-                background: y === year ? '#111' : '#fff',
-
-                color: y === year ? '#fff' : '#111',
-                textDecoration: 'none',
-                fontSize: 13,
-                fontWeight: 700,
-              }}
-            >
-              {y}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }} className="grid4">
-        <Stat label="Approval rate" value={rate === null ? '—' : `${(rate * 100).toFixed(1)}%`} />
-        <Stat label="Total filings" value={filed.toLocaleString()} />
-        <Stat label="Total approvals" value={approved.toLocaleString()} />
-        <Stat label="Last FY" value={String(totals.last_year)} />
-      </div>
-
-      <Section title="Top sponsors for this role">
-        <div className="grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14 }}>
-          {topCompanies.slice(0, 10).map((c) => (
-            <div key={`${c.company_name}-${c.filings}`} style={cardStyle}>
-              <div style={{ fontWeight: 800, overflowWrap: 'anywhere' }}>{c.company_name.trim()}</div>
-              <div style={{ marginTop: 6, color: '#666', fontSize: 13 }}>
-                Filed/Approved: <b style={{ color: '#111' }}>{c.filings.toLocaleString()}</b> /{' '}
-                <b style={{ color: '#111' }}>{c.approvals.toLocaleString()}</b>
-              </div>
-              {c.company_slug ? (
-                <Link href={`/companies/${c.company_slug}`} style={{ marginTop: 10, display: 'inline-block', fontSize: 13 }}>
-                  View company →
+            justifyContent: 'center'
+          }}>
+            {titleYears.map((y) => {
+              const isActive = y === year;
+              return (
+                <Link
+                  key={y}
+                  href={`/titles/${slug}?year=${y}`}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 999,
+                    background: isActive ? '#0f172a' : 'transparent',
+                    color: isActive ? '#fff' : '#475569',
+                    fontWeight: isActive ? 700 : 600,
+                    fontSize: 13,
+                    textDecoration: 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  FY{y}
                 </Link>
-              ) : null}
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
-      </Section>
-
-      <div className="grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14 }}>
-        <Section title="Top states">
-          <div style={cardStyle}>
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {topStates.map((x) => (
-                <li key={x.state} style={{ margin: '6px 0' }}>
-                  <b>{x.state}</b> — {x.filings.toLocaleString()}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Section>
-
-        <Section title={`Trend (FY${titleYears[titleYears.length - 1] ?? 'N/A'}–FY${titleYears[0] ?? 'N/A'})`}>
-          <div style={cardStyle}>
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {trend.map((t) => (
-                <li key={t.year} style={{ margin: '6px 0' }}>
-                  FY{t.year}: <b>{t.filings.toLocaleString()}</b> filings / <b>{t.approvals.toLocaleString()}</b> approvals
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Section>
       </div>
 
-      <div style={{ marginTop: 18, color: '#777', fontSize: 12, lineHeight: 1.5 }}>
-        Data source: DOL LCA disclosure (FY{titleYears[titleYears.length - 1] ?? 'N/A'}–FY{titleYears[0] ?? 'N/A'}). Aggregated by normalized job title. Not legal advice.
+      <div style={{ padding: '0 20px' }}>
+        
+        {/* 2. Key Metrics Row */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
+          gap: 16,
+          marginBottom: 32
+        }}>
+          <BigStat label="Sponsorship Rate" value={rate === null ? '—' : `${(rate * 100).toFixed(1)}%`} subtext="Overall certification rate" />
+          <BigStat label="Total Volume" value={filed.toLocaleString()} subtext="Applications filed" />
+          <BigStat label="Certifications" value={approved.toLocaleString()} subtext="LCA outcomes" />
+          <BigStat label="Data Recency" value={`FY${totals.last_year}`} subtext="Latest records available" />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
+          
+          {/* Top Sponsors for this title */}
+          <div style={cardStyle}>
+            <h2 style={cardTitleStyle}>Top Sponsors for this Role</h2>
+            <div style={{ marginTop: 20 }}>
+              {topCompanies.length ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {topCompanies.slice(0, 10).map((c) => (
+                    <div key={`${c.company_name}-${c.filings}`} style={{ 
+                      padding: '16px', 
+                      borderRadius: 16, 
+                      border: '1px solid #f1f5f9',
+                      background: '#f8fafc'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                        <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 16 }}>
+                          {c.company_name.trim()}
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '4px 8px', borderRadius: 8 }}>
+                          {c.filings.toLocaleString()} cases
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <span>{c.approvals.toLocaleString()} approvals</span>
+                         {c.company_slug && (
+                           <Link href={`/companies/${c.company_slug}`} style={{ fontSize: 12, fontWeight: 700, textDecoration: 'none', color: '#4F46E5' }}>
+                             Profile →
+                           </Link>
+                         )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: '#94a3b8' }}>No specific sponsor data for this period.</div>
+              )}
+            </div>
+          </div>
+
+          {/* Geographic & Trend Card */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              
+            <div style={cardStyle}>
+              <h2 style={cardTitleStyle}>Geographic Demand</h2>
+              <div style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {topStates.length ? (
+                  topStates.map((x) => (
+                    <div key={x.state} style={{ 
+                      padding: '10px 16px', 
+                      borderRadius: 12, 
+                      border: '1px solid #e2e8f0',
+                      background: '#fff',
+                      fontWeight: 700,
+                      fontSize: 14,
+                      color: '#0f172a'
+                    }}>
+                      {x.state} <span style={{ color: '#64748b', fontWeight: 500, marginLeft: 4 }}>({x.filings.toLocaleString()})</span>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ color: '#94a3b8' }}>No geographic data.</div>
+                )}
+              </div>
+            </div>
+
+            <div style={cardStyle}>
+              <h2 style={cardTitleStyle}>Role Filing Trend</h2>
+              <div style={{ marginTop: 20 }}>
+                 {trend.length ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {trend.map((t) => (
+                      <div key={t.year} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>FY{t.year}</div>
+                        <div style={{ flex: 1, height: 8, background: '#f1f5f9', margin: '0 16px', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+                           <div style={{ 
+                             position: 'absolute', 
+                             left: 0, 
+                             top: 0, 
+                             bottom: 0, 
+                             width: `${Math.min(100, (t.filings / filed) * 100)}%`, 
+                             background: '#2563eb',
+                             borderRadius: 4
+                           }} />
+                        </div>
+                        <div style={{ fontWeight: 800, fontSize: 13, color: '#475569', minWidth: 80, textAlign: 'right' }}>
+                          {t.filings.toLocaleString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ color: '#94a3b8' }}>No historical trend data.</div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div style={{ marginTop: 64, borderTop: '1px solid #f1f5f9', paddingTop: 24, textAlign: 'center' }}>
+          <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6, maxWidth: 800, margin: '0 auto' }}>
+             Role-level data is aggregated based on job titles normalized from U.S. Department of Labor (DOL) disclosure files. Filing volume provides a signal of employer demand but does not represent legal eligibility or job guarantees.
+          </p>
+        </div>
       </div>
 
-      <style>{`
-        @media (max-width: 980px) {
-          .grid2 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-          .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-        @media (max-width: 520px) {
-          .grid4 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section style={{ marginTop: 16 }}>
-      <div style={{ fontWeight: 800, marginBottom: 10 }}>{title}</div>
-      {children}
-    </section>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={{ border: '1px solid #eee', borderRadius: 14, padding: 14, background: '#fff', boxShadow: '0 1px 0 rgba(0,0,0,0.02)' }}>
-      <div style={{ color: '#666', fontSize: 12 }}>{label}</div>
-      <div style={{ fontWeight: 900, marginTop: 6, fontSize: 18 }}>{value}</div>
-    </div>
+    </article>
   );
 }
 
 const cardStyle: React.CSSProperties = {
-  border: '1px solid #eee',
-  borderRadius: 14,
-  padding: 14,
+  border: '1px solid #e2e8f0',
+  borderRadius: 24,
+  padding: 24,
   background: '#fff',
-  boxShadow: '0 1px 0 rgba(0,0,0,0.02)',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
 };
+
+const cardTitleStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 18,
+  fontWeight: 800,
+  color: '#0f172a',
+  letterSpacing: '-0.02em'
+};
+
+function BigStat({ label, value, subtext }: { label: string; value: string; subtext: string }) {
+  return (
+    <div style={{ 
+      border: '1px solid #e2e8f0', 
+      borderRadius: 20, 
+      padding: '24px', 
+      background: '#fff',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <div style={{ color: '#64748b', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      <div style={{ fontWeight: 900, marginTop: 12, fontSize: 26, color: '#0f172a', letterSpacing: '-0.04em' }}>{value}</div>
+      <div style={{ color: '#94a3b8', fontSize: 11, marginTop: 6, fontWeight: 500 }}>{subtext}</div>
+    </div>
+  );
+}

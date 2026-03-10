@@ -1,13 +1,14 @@
-import Link from 'next/link';
-import type { Metadata } from 'next';
-import { getAvailableYears, listCompanies, type Company } from '@/lib/h1bApi';
-import CompaniesControls from './CompaniesControls';
-import PaginationControls from './PaginationControls';
+import Link from "next/link";
+import type { Metadata } from "next";
+import { getAvailableYears, listCompanies, type Company } from "@/lib/h1bApi";
+import CompaniesControls from "./CompaniesControls";
+import PaginationControls from "./PaginationControls";
 
 export const metadata: Metadata = {
-  title: 'H1B Sponsor Companies',
-  description: 'Explore companies with proven H1B sponsorship track records (based on public DOL LCA disclosure data).',
-  alternates: { canonical: '/companies' },
+  title: "Top H1B Sponsors",
+  description:
+    "Explore companies with proven H1B sponsorship track records (based on public DOL LCA disclosure data).",
+  alternates: { canonical: "/companies" },
 };
 
 export default async function CompaniesPage({
@@ -15,8 +16,8 @@ export default async function CompaniesPage({
 }: {
   searchParams: Promise<{
     keyword?: string;
-    sortBy?: 'filed' | 'name';
-    sortDirection?: 'ASC' | 'DESC';
+    sortBy?: "filed" | "name";
+    sortDirection?: "ASC" | "DESC";
     page?: string;
     size?: string;
     year?: string;
@@ -27,7 +28,7 @@ export default async function CompaniesPage({
   const size = Math.min(100, Math.max(1, Number(sp.size || 24) || 24));
 
   const years = (await getAvailableYears()).map(String);
-  const year = sp.year || years[0] || '2024';
+  const year = sp.year || years[0] || "2024";
 
   let companies;
   try {
@@ -41,10 +42,12 @@ export default async function CompaniesPage({
     });
   } catch (e: any) {
     return (
-      <div>
-        <h1 style={{ margin: 0 }}>Companies</h1>
-        <p style={{ color: '#b00' }}>Failed to load companies from API. Check H1B_API_BASE_URL and backend status.</p>
-        <pre style={{ whiteSpace: 'pre-wrap', color: '#555' }}>{String(e?.message || e)}</pre>
+      <div style={{ padding: "80px 20px", textAlign: "center" }}>
+        <h1 style={{ color: "#0f172a", fontSize: 24, fontWeight: 800 }}>Top Sponsors</h1>
+        <p style={{ color: "#ef4444", marginTop: 12 }}>Failed to load companies from API.</p>
+        <pre style={{ color: "#64748b", marginTop: 8, fontSize: 13, background: "#f8fafc", padding: 16, borderRadius: 12, display: "inline-block" }}>
+          {String(e?.message || e)}
+        </pre>
       </div>
     );
   }
@@ -52,58 +55,113 @@ export default async function CompaniesPage({
   const totalSponsors = companies.total_elements;
 
   return (
-    <div>
-      <div style={{ textAlign: 'center', padding: '12px 0 6px' }}>
-        <h1 style={{ margin: 0, fontSize: 32, letterSpacing: '-0.02em' }}>H1B Sponsor Companies</h1>
-        <p style={{ margin: '10px auto 0', maxWidth: 760, color: '#555', lineHeight: 1.6 }}>
-          Browse sponsors by year using public DOL LCA disclosure data. Always confirm sponsorship details with the employer.
+    <div style={{ maxWidth: 1080, margin: "0 auto", paddingBottom: 80 }}>
+      
+      {/* 1. Page Header / Hero */}
+      <div style={{ textAlign: "center", padding: "64px 20px 48px" }}>
+        <div style={{ marginBottom: 16 }}>
+          <span style={{
+            fontSize: 12,
+            fontWeight: 800,
+            color: "#4f46e5",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            background: "#eef2ff",
+            padding: "6px 14px",
+            borderRadius: 999,
+          }}>
+            Discovery
+          </span>
+        </div>
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: "clamp(36px, 5vw, 52px)", 
+          letterSpacing: "-0.04em",
+          fontWeight: 900,
+          color: "#0f172a",
+          lineHeight: 1.1
+        }}>
+          Top H1B Sponsors
+        </h1>
+        <p style={{
+          margin: "18px auto 0",
+          maxWidth: 640,
+          color: "#475569",
+          lineHeight: 1.7,
+          fontSize: "clamp(16px, 2vw, 18px)",
+          fontWeight: 500
+        }}>
+          Explore employers with verified H1B sponsorship records. Filter by filing volume, approval rates, and fiscal year to find your next opportunity.
         </p>
+
+        {/* Cross-Navigation Teaser */}
+        <div style={{ marginTop: 32 }}>
+          <Link href="/titles" style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 20px",
+            background: "#f8fafc",
+            color: "#475569",
+            borderRadius: 999,
+            fontSize: 14,
+            fontWeight: 700,
+            textDecoration: "none",
+            border: "1px solid #e2e8f0",
+            transition: "all 0.2s"
+          }}>
+            <span>Looking for specific roles? Explore Top Jobs</span>
+            <span style={{ color: "#94a3b8" }}>→</span>
+          </Link>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'center' }}>
+      {/* 2. Product Utility / Filters */}
+      <div style={{ display: "flex", justifyContent: "center", padding: "0 20px" }}>
         <CompaniesControls defaultYear={year} years={years} />
       </div>
 
-      <div style={{ marginTop: 12, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 15 }}>
-            {totalSponsors.toLocaleString()} sponsors (FY{year})
+      <div style={{ padding: "0 20px" }}>
+        {/* 3. Results Header */}
+        <div style={{
+          marginBottom: 24,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 16,
+        }}>
+          <div style={{ fontWeight: 800, fontSize: 20, color: "#0f172a" }}>
+            {totalSponsors.toLocaleString()} <span style={{ color: "#64748b", fontWeight: 600, fontSize: 16 }}>Sponsors in FY{year}</span>
           </div>
-          <div style={{ color: '#666', fontSize: 13 }}>Companies with H1B sponsorship signals</div>
+          <div style={{ color: "#64748b", fontSize: 13, fontWeight: 600, background: "#f1f5f9", padding: "4px 12px", borderRadius: 8 }}>
+            Page {page + 1} of {companies.total_pages}
+          </div>
         </div>
-        <div style={{ color: '#666', fontSize: 13 }}>
-          Showing {companies.content.length} / {totalSponsors.toLocaleString()}
+
+        {/* 4. Main Content Area */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 320px), 1fr))",
+          gap: 20,
+        }}>
+          {companies.content.map((c) => (
+            <CompanyCard key={c.id} c={c} />
+          ))}
+        </div>
+
+        {/* 5. Pagination */}
+        <div style={{ marginTop: 40 }}>
+          <PaginationControls page={companies.page} totalPages={companies.total_pages} />
+        </div>
+
+        {/* Footer Disclaimer Strip */}
+        <div style={{ marginTop: 64, paddingTop: 32, borderTop: "1px solid #f1f5f9", textAlign: "center" }}>
+          <p style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.6, maxWidth: 800, margin: "0 auto" }}>
+            Data source: US Department of Labor LCA disclosure files. H1B Finder provides historical data visualization and does not guarantee future sponsorship or visa outcomes.
+          </p>
         </div>
       </div>
-
-      <div
-        className="grid3"
-        style={{
-          marginTop: 14,
-          display: 'grid',
-          gap: 14,
-        }}
-      >
-        {companies.content.map((c) => (
-          <CompanyCard key={c.id} c={c} />
-        ))}
-      </div>
-
-      <PaginationControls page={companies.page} totalPages={companies.total_pages} />
-
-      <div style={{ marginTop: 18, color: '#777', fontSize: 12, lineHeight: 1.5 }}>
-        Data source: DOL LCA disclosure files (FY{years[years.length - 1] ?? 'N/A'}–FY{years[0] ?? 'N/A'}) aggregated by employer name. Not legal advice.
-      </div>
-
-      <style>{`
-        /* Default: 2 columns. Large screens: 3 columns. Phones: 1 column. */
-        @media (min-width: 1100px) {
-          .grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        }
-        @media (max-width: 900px) {
-          .grid3 { grid-template-columns: repeat(1, minmax(0, 1fr)) !important; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -121,89 +179,112 @@ function CompanyCard({ c }: { c: Company }) {
     <Link
       href={`/companies/${c.slug || c.id}`}
       style={{
-        display: 'block',
-        border: '1px solid #eee',
-        borderRadius: 14,
-        padding: 14,
-        textDecoration: 'none',
-        color: '#111',
-        background: '#fff',
-        boxShadow: '0 1px 0 rgba(0,0,0,0.02)',
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        border: "1px solid #e2e8f0",
+        borderRadius: 20,
+        padding: 20,
+        textDecoration: "none",
+        color: "#0f172a",
+        background: "#fff",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+        transition: "box-shadow 0.2s, transform 0.2s",
       }}
+      className="card-hover-effect"
     >
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <div
-            aria-hidden
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: 10,
-              background: '#EEF2FF',
-              display: 'grid',
-              placeItems: 'center',
-              fontWeight: 800,
-              color: '#3730A3',
-              flex: '0 0 auto',
-            }}
-          >
+      <style>{`
+        .card-hover-effect:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);
+          border-color: #cbd5e1;
+        }
+      `}</style>
+      
+      <div>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <div style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background: "#f1f5f9",
+            display: "grid",
+            placeItems: "center",
+            fontWeight: 800,
+            fontSize: 16,
+            color: "#475569",
+            flexShrink: 0,
+            border: "1px solid #e2e8f0"
+          }}>
             {initials(c.name)}
           </div>
+
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            padding: "4px 10px",
+            borderRadius: 999,
+            background: "#ecfdf5",
+            color: "#059669",
+            border: "1px solid #a7f3d0",
+            textTransform: "uppercase",
+            letterSpacing: "0.05em"
+          }}>
+            Sponsor
+          </span>
         </div>
 
-        <span
-          style={{
-            fontSize: 12,
-            padding: '4px 10px',
-            borderRadius: 999,
-            background: '#ECFDF3',
-            color: '#027A48',
-            border: '1px solid #D1FADF',
-            flex: '0 0 auto',
-          }}
-        >
-          Active
-        </span>
+        <div style={{
+          marginTop: 16,
+          fontWeight: 800,
+          fontSize: 18,
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          lineHeight: 1.3,
+        }}>
+          {c.name}
+        </div>
       </div>
 
-      <div style={{ marginTop: 10, fontWeight: 900, whiteSpace: 'normal', overflowWrap: 'anywhere', lineHeight: 1.25 }}>
-        {c.name}
-      </div>
-
-
-      <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'nowrap' }}>
-        <InlineStat label="Rate" value={rate === null ? '—' : pct(rate)} />
-        <InlineStat label="Filed" value={filed ? filed.toLocaleString() : '—'} />
-        <InlineStat label="Approved" value={approved ? approved.toLocaleString() : '—'} />
+      <div style={{ 
+        marginTop: 20, 
+        paddingTop: 16,
+        borderTop: "1px solid #f1f5f9",
+        display: "grid", 
+        gridTemplateColumns: "1fr 1fr 1fr", 
+        gap: 12 
+      }}>
+        <div>
+          <div style={{ color: "#64748b", fontSize: 12, fontWeight: 600 }}>Approval</div>
+          <div style={{ fontWeight: 800, fontSize: 16, color: rate && rate >= 0.9 ? "#059669" : "#0f172a", marginTop: 2 }}>
+            {rate === null ? "—" : pct(rate)}
+          </div>
+        </div>
+        <div>
+          <div style={{ color: "#64748b", fontSize: 12, fontWeight: 600 }}>Filed</div>
+          <div style={{ fontWeight: 800, fontSize: 16, marginTop: 2 }}>
+            {filed ? filed.toLocaleString() : "—"}
+          </div>
+        </div>
+        <div>
+           <div style={{ color: "#64748b", fontSize: 12, fontWeight: 600 }}>Approved</div>
+           <div style={{ fontWeight: 800, fontSize: 16, marginTop: 2 }}>
+            {approved ? approved.toLocaleString() : "—"}
+          </div>
+        </div>
       </div>
     </Link>
   );
 }
 
-function InlineStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        border: '1px solid #F0F0F0',
-        borderRadius: 12,
-        padding: '8px 10px',
-        flex: '1 1 0',
-        minWidth: 0,
-      }}
-    >
-      <div style={{ color: '#666', fontSize: 11 }}>{label}</div>
-      <div style={{ fontWeight: 900, marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
-    </div>
-  );
-}
-
 function initials(name: string) {
   const parts = name
-    .replace(/[^A-Za-z0-9 ]+/g, ' ')
+    .replace(/[^A-Za-z0-9 ]+/g, " ")
     .trim()
     .split(/\s+/)
     .filter(Boolean);
-  const a = parts[0]?.[0] || 'H';
-  const b = parts[1]?.[0] || parts[0]?.[1] || 'B';
+  const a = parts[0]?.[0] || "H";
+  const b = parts[1]?.[0] || parts[0]?.[1] || "B";
   return (a + b).toUpperCase();
 }

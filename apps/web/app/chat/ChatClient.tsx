@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 
 type ChatMessage = {
   role: 'user' | 'assistant';
@@ -127,103 +128,251 @@ export default function ChatClient({ mode = 'page', onClose }: ChatClientProps) 
   const isModal = mode === 'modal';
 
   return (
-    <div className={isModal ? 'chat-shell chat-shell-modal' : 'chat-shell'}>
-      <div className="chat-head">
-        <div>
-          <h1 className="chat-title">{isModal ? 'AI Chat' : 'H1B AI Chatbot'}</h1>
-          <p className="chat-subtitle">
-            Ask questions in English. The bot answers using H1B dataset-backed context.
+    <div style={{ maxWidth: isModal ? 'none' : 1080, margin: '0 auto', paddingBottom: isModal ? 0 : 80 }}>
+      
+      {/* 1. Page Header / Hero (only for page mode) */}
+      {!isModal && (
+        <div style={{ textAlign: 'center', padding: '64px 20px 48px' }}>
+          <div style={{ marginBottom: 16 }}>
+            <span style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: "#4f46e5",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              background: "#eef2ff",
+              padding: "6px 14px",
+              borderRadius: 999,
+            }}>
+              Assistant
+            </span>
+          </div>
+          <h1 style={{ 
+            margin: 0, 
+            fontSize: "clamp(32px, 5vw, 48px)", 
+            letterSpacing: "-0.04em",
+            fontWeight: 900,
+            color: '#0f172a',
+            lineHeight: 1.1
+          }}>
+            H1B Intelligence Chat
+          </h1>
+          <p style={{
+            margin: '18px auto 0',
+            maxWidth: 640,
+            color: '#475569',
+            lineHeight: 1.7,
+            fontSize: 'clamp(15px, 2vw, 17px)',
+            fontWeight: 500
+          }}>
+            Ask deep-dive questions about verified sponsor trends and salary benchmarks. Our AI analyzes historical filings to provide contextual answers.
           </p>
-        </div>
-        {isModal && onClose ? (
-          <button type="button" onClick={onClose} className="chat-close" aria-label="Close chat">
-            Close
-          </button>
-        ) : null}
-      </div>
 
-      {statusLoading ? (
-        <p className="chat-meta">Checking chat availability...</p>
-      ) : chatStatus?.enabled ? (
-        <p className="chat-meta">
-          Model: {chatStatus.model} {chatStatus.rate_limit_per_min ? `· Rate limit: ${chatStatus.rate_limit_per_min}/min` : ''}
-        </p>
-      ) : (
-        <p className="chat-meta chat-meta-error">
-          Chat is disabled on this server until `GEMINI_API_KEY` is configured for the backend.
-        </p>
+          <div style={{ marginTop: 32 }}>
+            <Link href="/blog" style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              padding: "10px 20px",
+              background: "#f8fafc",
+              color: "#475569",
+              borderRadius: 999,
+              fontSize: 14,
+              fontWeight: 700,
+              textDecoration: "none",
+              border: "1px solid #e2e8f0",
+              transition: "all 0.2s"
+            }}>
+              <span>Looking for deep dives? Read our Blog</span>
+              <span style={{ color: "#94a3b8" }}>→</span>
+            </Link>
+          </div>
+        </div>
       )}
 
-      <div className="chat-toolbar">
-        <label htmlFor={isModal ? 'chat-year-modal' : 'chat-year'} className="chat-label">Fiscal Year</label>
-        <input
-          id={isModal ? 'chat-year-modal' : 'chat-year'}
-          value={year}
-          onChange={(e) => setYear(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
-          placeholder="e.g. 2025"
-          className="chat-year-input"
-        />
-      </div>
+      <div style={{ padding: isModal ? '24px' : '0 20px' }}>
+        
+        {/* 2. Product Utility / Chat Controls */}
+        <div style={{ 
+          maxWidth: 900, 
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 24
+        }}>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            flexWrap: 'wrap',
+            gap: 16,
+            paddingBottom: 16,
+            borderBottom: '1px solid #f1f5f9'
+          }}>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status</span>
+                {statusLoading ? (
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>Checking Brain...</span>
+                ) : chatStatus?.enabled ? (
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#059669', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 999, background: '#10b981' }} />
+                    {chatStatus.model?.split('/').pop() || 'Online'}
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#ef4444' }}>Offline</span>
+                )}
+             </div>
 
-      <div className="chat-suggestions">
-        <div className="chat-suggestions-label">Try a question</div>
-        <div className="chat-suggestions-grid">
-          {SUGGESTED_QUESTIONS.map((question) => (
-            <button
-              key={question}
-              type="button"
-              className="chat-suggestion-chip"
-              onClick={() => void onSend(question)}
-              disabled={loading || statusLoading || chatStatus?.enabled !== true}
-            >
-              {question}
-            </button>
-          ))}
-        </div>
-      </div>
+             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <label style={{ fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Fiscal Focus</label>
+                <input
+                  value={year}
+                  onChange={(e) => setYear(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
+                  placeholder="e.g. 2025"
+                  style={{
+                    width: 80,
+                    padding: '8px 12px',
+                    borderRadius: 12,
+                    border: '1px solid #e2e8f0',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    outline: 'none',
+                    background: '#f8fafc'
+                  }}
+                />
+             </div>
+          </div>
 
-      <div className={`chat-messages ${isModal ? 'chat-messages-modal' : ''}`}>
-        <div className="chat-message-list">
-          {messages.map((m, idx) => (
-            <div
-              key={`${idx}-${m.role}`}
-              className={m.role === 'user' ? 'chat-bubble chat-bubble-user' : 'chat-bubble chat-bubble-assistant'}
-            >
-              {m.text}
+          {/* 3. Main Content Area / Chat Interface */}
+          <div style={{ 
+            display: 'grid', 
+            gap: 20,
+            background: '#fff',
+            border: '1px solid #e2e8f0',
+            borderRadius: 24,
+            padding: '24px',
+            boxShadow: '0 4px 20px -10px rgba(0,0,0,0.02)'
+          }}>
+            
+            <div className="chat-suggestions" style={{ marginBottom: 4 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {SUGGESTED_QUESTIONS.map((question) => (
+                  <button
+                    key={question}
+                    type="button"
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 999,
+                      border: '1px solid #e2e8f0',
+                      background: '#fff',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: '#475569',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    onClick={() => void onSend(question)}
+                    disabled={loading || statusLoading || chatStatus?.enabled !== true}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
             </div>
-          ))}
-          {loading ? <div className="chat-thinking">Thinking...</div> : null}
+
+            <div style={{ 
+                minHeight: 480, 
+                maxHeight: 600, 
+                overflowY: 'auto',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+                padding: '20px',
+                borderRadius: 20,
+                background: '#f8fafc',
+                border: '1px solid #f1f5f9'
+              }}>
+                {messages.map((m, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                      maxWidth: '85%',
+                      padding: '14px 18px',
+                      borderRadius: 20,
+                      fontSize: 15,
+                      lineHeight: 1.6,
+                      background: m.role === 'user' ? '#0f172a' : '#fff',
+                      color: m.role === 'user' ? '#fff' : '#0f172a',
+                      border: m.role === 'assistant' ? '1px solid #e2e8f0' : 'none',
+                      boxShadow: m.role === 'assistant' ? '0 1px 2px rgba(0,0,0,0.02)' : 'none'
+                    }}
+                  >
+                    {m.text}
+                  </div>
+                ))}
+                {loading && <div style={{ color: '#94a3b8', fontSize: 13, fontWeight: 500, fontStyle: 'italic' }}>Analyzing Brain datasets...</div>}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end' }}>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={chatStatus?.enabled === false ? 'Brain is offline.' : 'Ask about H1B sponsor trends...'}
+                style={{
+                  flex: 1,
+                  padding: '16px',
+                  borderRadius: 20,
+                  border: '1px solid #e2e8f0',
+                  background: '#fff',
+                  fontSize: 15,
+                  outline: 'none',
+                  resize: 'none',
+                  minHeight: 60
+                }}
+                disabled={chatStatus?.enabled === false || statusLoading}
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    void onSend();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                disabled={!canSend}
+                onClick={() => void onSend()}
+                style={{
+                  background: '#0f172a',
+                  color: '#fff',
+                  height: 60,
+                  padding: '0 24px',
+                  borderRadius: 20,
+                  fontWeight: 700,
+                  border: 'none',
+                  cursor: 'pointer',
+                  opacity: canSend ? 1 : 0.6,
+                  transition: 'opacity 0.2s'
+                }}
+              >
+                Send
+              </button>
+            </div>
+            {error && <div style={{ color: '#ef4444', fontSize: 13, fontWeight: 600 }}>{error}</div>}
+            <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>
+                Tip: Use Cmd/Ctrl + Enter to send fast.
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Disclaimer Strip */}
+        <div style={{ marginTop: 80, paddingTop: 32, borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+          <p style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.6, maxWidth: 800, margin: '0 auto' }}>
+             Responses are generated by an AI assistant using historical H1B disclosure data as context. AI can make mistakes. Always verify critical filing requirements with official Department of Labor resources.
+          </p>
         </div>
       </div>
 
-      <div className="chat-compose">
-        <textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={chatStatus?.enabled === false ? 'Chat is disabled on this server.' : 'Ask anything about H1B sponsor data...'}
-          rows={isModal ? 4 : 3}
-          className="chat-textarea"
-          disabled={chatStatus?.enabled === false || statusLoading}
-          onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-              e.preventDefault();
-              void onSend();
-            }
-          }}
-        />
-        <button
-          type="button"
-          disabled={!canSend}
-          onClick={() => void onSend()}
-          className="chat-send"
-        >
-          {statusLoading ? 'Checking...' : 'Send'}
-        </button>
-      </div>
-
-      <div className="chat-tip">Tip: press Ctrl/Cmd + Enter to send.</div>
-
-      {error ? <div className="chat-error">{error}</div> : null}
     </div>
   );
 }

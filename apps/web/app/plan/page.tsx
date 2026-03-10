@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 
 type PlanResponse = {
   year: number;
@@ -45,7 +46,6 @@ export default function PlanPage() {
       const randomPart = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
       return `s_${Date.now().toString(36)}_${randomPart}`;
     }
-
     return `s_${Date.now().toString(36)}_${Date.now().toString(16)}`;
   }
 
@@ -191,157 +191,217 @@ export default function PlanPage() {
   }
 
   return (
-    <div style={{ maxWidth: 980, margin: '0 auto', paddingBottom: 28 }}>
-      <h1 style={{ margin: '8px 0 8px', fontSize: 'clamp(30px,4vw,42px)' }}>Personalized H1B Plan</h1>
-      <p style={{ color: '#52525b', marginTop: 0 }}>
-        Tell us your target role and location. We will return top sponsors, suggested titles, and a 7-day action checklist.
-      </p>
-
-      <form onSubmit={onSubmit} style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', background: '#fff', border: '1px solid #e4e4e7', borderRadius: 14, padding: 14 }}>
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span style={{ fontSize: 13, color: '#3f3f46' }}>Target role</span>
-          <input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="Software Engineer" style={inputStyle} required />
-        </label>
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span style={{ fontSize: 13, color: '#3f3f46' }}>Target state</span>
-          <input value={targetState} onChange={(e) => setTargetState(e.target.value)} placeholder="CA" style={inputStyle} />
-        </label>
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span style={{ fontSize: 13, color: '#3f3f46' }}>Target city (optional)</span>
-          <input value={targetCity} onChange={(e) => setTargetCity(e.target.value)} placeholder="San Francisco" style={inputStyle} />
-        </label>
-        <label style={{ display: 'grid', gap: 6 }}>
-          <span style={{ fontSize: 13, color: '#3f3f46' }}>Years experience</span>
-          <input type="number" min={0} max={30} value={yearsExperienceInput} onChange={(e) => setYearsExperienceInput(e.target.value)} placeholder="0" style={inputStyle} />
-        </label>
-
-        <div style={{ gridColumn: '1 / -1', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button disabled={!canSubmit || loading} type="submit" style={{ ...btnStyle, opacity: !canSubmit || loading ? 0.6 : 1 }}>
-            {loading ? 'Generating...' : 'Generate My Plan'}
-          </button>
-          {error ? <span style={{ color: '#dc2626', fontSize: 13 }}>{error}</span> : null}
+    <div style={{ maxWidth: 1080, margin: '0 auto', paddingBottom: 80 }}>
+      
+      {/* 1. Page Header / Hero */}
+      <div style={{ textAlign: 'center', padding: '64px 20px 48px' }}>
+        <div style={{ marginBottom: 16 }}>
+          <span style={{
+            fontSize: 12,
+            fontWeight: 800,
+            color: "#4f46e5",
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+            background: "#eef2ff",
+            padding: "6px 14px",
+            borderRadius: 999,
+          }}>
+            Strategy
+          </span>
         </div>
-      </form>
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: "clamp(32px, 5vw, 48px)", 
+          letterSpacing: "-0.04em",
+          fontWeight: 900,
+          color: '#0f172a',
+          lineHeight: 1.1
+        }}>
+          My H1B Action Plan
+        </h1>
+        <p style={{
+          margin: '18px auto 0',
+          maxWidth: 640,
+          color: '#475569',
+          lineHeight: 1.7,
+          fontSize: 'clamp(16px, 2vw, 18px)',
+          fontWeight: 500
+        }}>
+          Generate a data-backed roadmap based on your target role and location. We’ll identify top matching sponsors and build a 7-day checklist for your search.
+        </p>
 
-      {!loading && !plan ? (
-        <div style={{ marginTop: 14, padding: 14, border: '1px dashed #d4d4d8', borderRadius: 12, color: '#71717a' }}>
-          No plan yet. Fill out the form and click <b>Generate My Plan</b>.
+        {/* Cross-Navigation Teaser */}
+        <div style={{ marginTop: 32 }}>
+          <Link href="/chat" style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "10px 20px",
+            background: "#f8fafc",
+            color: "#475569",
+            borderRadius: 999,
+            fontSize: 14,
+            fontWeight: 700,
+            textDecoration: "none",
+            border: "1px solid #e2e8f0",
+            transition: "all 0.2s"
+          }}>
+            <span>Need more detail? Ask our AI Assistant</span>
+            <span style={{ color: "#94a3b8" }}>→</span>
+          </Link>
         </div>
-      ) : null}
+      </div>
 
-      {plan ? (
-        <div style={{ marginTop: 16, display: 'grid', gap: 12 }}>
-          <div style={shareCardStyle}>
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
-              <div>
-                <h2 style={{ margin: '0 0 6px' }}>Share this plan</h2>
-                <p style={{ margin: 0, color: '#52525b', fontSize: 13 }}>
-                  Built for {plan.profile.target_role}
-                  {plan.profile.target_city || plan.profile.target_state
-                    ? ` · ${[plan.profile.target_city, plan.profile.target_state].filter(Boolean).join(', ')}`
-                    : ''}
-                  . No personal/sensitive details included.
-                </p>
-                <p style={{ margin: '6px 0 0', color: '#71717a', fontSize: 12 }}>
-                  Referral: {refCode ? refCode : 'none'}
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                <button type="button" style={secondaryBtnStyle} onClick={onCopyShareText}>Copy Share Text</button>
-                <button type="button" style={btnStyle} onClick={onShareLink}>Share Link</button>
-              </div>
+      <div style={{ padding: '0 20px' }}>
+        
+        {/* 2. Product Utility / Form Card */}
+        <div style={{ 
+          background: '#fff', 
+          border: '1px solid #e2e8f0', 
+          borderRadius: 24, 
+          padding: '32px',
+          boxShadow: '0 10px 40px -10px rgba(0,0,0,0.04)',
+          maxWidth: 800,
+          margin: '0 auto 48px'
+        }}>
+          <form onSubmit={onSubmit} style={{ display: 'grid', gap: 24 }}>
+            <div style={{ display: 'grid', gap: 20, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+              <label style={labelStyle}>
+                <span style={spanLabelStyle}>Target role</span>
+                <input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. Software Engineer" style={inputStyle} required />
+              </label>
+              <label style={labelStyle}>
+                <span style={spanLabelStyle}>Target state</span>
+                <input value={targetState} onChange={(e) => setTargetState(e.target.value)} placeholder="e.g. CA" style={inputStyle} />
+              </label>
+              <label style={labelStyle}>
+                <span style={spanLabelStyle}>Target city</span>
+                <input value={targetCity} onChange={(e) => setTargetCity(e.target.value)} placeholder="San Francisco" style={inputStyle} />
+              </label>
+              <label style={labelStyle}>
+                <span style={spanLabelStyle}>Experience (Years)</span>
+                <input type="number" min={0} max={30} value={yearsExperienceInput} onChange={(e) => setYearsExperienceInput(e.target.value)} placeholder="3" style={inputStyle} />
+              </label>
             </div>
 
-            {shareNotice ? <div style={{ marginTop: 10, fontSize: 13, color: '#4338ca' }}>{shareNotice}</div> : null}
+            <button disabled={!canSubmit || loading} type="submit" style={{ 
+              ...btnStyle, 
+              opacity: !canSubmit || loading ? 0.6 : 1,
+              padding: '16px 24px',
+              fontSize: 16
+            }}>
+              {loading ? 'Building Strategy...' : 'Create My Personalized Roadmap'}
+            </button>
+            {error && <div style={{ color: '#ef4444', fontSize: 13, fontWeight: 600, textAlign: 'center' }}>{error}</div>}
+          </form>
+        </div>
 
-            <div style={{ marginTop: 12, borderRadius: 12, border: '1px solid #ddd6fe', background: '#faf5ff', padding: 12 }}>
-              <div style={{ fontWeight: 800, color: '#4c1d95' }}>H1B Plan Snapshot (safe to screenshot)</div>
-              <div style={{ marginTop: 6, color: '#5b21b6', fontSize: 14 }}>
-                Top sponsors: {plan.recommendations.slice(0, 3).map((r) => r.company_name).join(' · ') || 'N/A'}
-              </div>
-              <div style={{ marginTop: 4, color: '#6d28d9', fontSize: 13 }}>
-                Suggested titles: {plan.suggested_titles.slice(0, 3).map((t) => t.title).join(' · ') || 'N/A'}
-              </div>
-              <div style={{ marginTop: 8, color: '#7c3aed', fontSize: 12 }}>
-                {buildShareUrl()}
-              </div>
-            </div>
+        {/* 3. Main Content Area / Plan Results */}
+        {!loading && !plan ? (
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '64px 24px',
+            border: '2px dashed #e2e8f0',
+            borderRadius: 24,
+            color: '#94a3b8',
+            fontSize: 15,
+            background: '#f8fafc'
+          }}>
+            Fill out your profile above to generate your H1B search strategy.
           </div>
+        ) : null}
 
-          <div style={cardStyle}>
-            <h2 style={{ margin: '0 0 6px' }}>Top Target Sponsors (FY{plan.year})</h2>
-            {plan.recommendations.map((r, idx) => (
-              <div key={`${r.company_name}-${idx}`} style={{ padding: '10px 0', borderTop: idx === 0 ? 'none' : '1px solid #eee' }}>
-                <div style={{ fontWeight: 700 }}>{idx + 1}. {r.company_name}</div>
-                <div style={{ color: '#52525b', fontSize: 13 }}>
-                  {r.approvals.toLocaleString()} approvals · {r.approval_rate}% approval rate · Avg salary ${r.avg_salary.toLocaleString()}
+        {plan ? (
+          <div style={{ display: 'grid', gap: 24 }}>
+            
+            {/* Share Highlight Card */}
+            <div style={shareCardStyle}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 24, alignItems: 'center' }}>
+                <div>
+                  <h2 style={{ ...cardTitleStyle, fontSize: 22 }}>Roadmap for {plan.profile.target_role}</h2>
+                  <p style={{ margin: '8px 0 0', color: '#475569', fontSize: 14, fontWeight: 500 }}>
+                    Successfully generated for FY{plan.year} data benchmarks.
+                  </p>
                 </div>
-                <ul style={{ margin: '8px 0 0 18px', color: '#27272a' }}>
-                  {r.explainability.slice(0, 3).map((w, i) => <li key={i}>{w}</li>)}
-                </ul>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button type="button" style={secondaryBtnStyle} onClick={onCopyShareText}>Copy Summary</button>
+                  <button type="button" style={btnStyle} onClick={onShareLink}>Share Plan</button>
+                </div>
               </div>
-            ))}
-          </div>
+              {shareNotice && <div style={{ marginTop: 12, fontSize: 13, color: '#4f46e5', fontWeight: 600 }}>{shareNotice}</div>}
+            </div>
 
-          <div style={cardStyle}>
-            <h2 style={{ margin: '0 0 6px' }}>Suggested Titles</h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {plan.suggested_titles.map((t) => (
-                <span key={t.title} style={{ border: '1px solid #ddd', borderRadius: 999, padding: '6px 10px', fontSize: 13 }}>
-                  {t.title} ({t.approvals})
-                </span>
-              ))}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
+              
+              {/* Recommendations Card */}
+              <div style={cardStyle}>
+                <h3 style={cardTitleStyle}>Recommended Sponsors</h3>
+                <div style={{ marginTop: 24, display: 'grid', gap: 12 }}>
+                   {plan.recommendations.map((r, idx) => (
+                    <div key={idx} style={{ 
+                      padding: '16px', 
+                      borderRadius: 16, 
+                      border: '1px solid #f1f5f9',
+                      background: '#f8fafc'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontWeight: 800, color: '#0f172a' }}>{r.company_name}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#059669', background: '#ecfdf5', padding: '4px 8px', borderRadius: 8 }}>
+                          {r.approval_rate}% Rate
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 13, color: '#64748b', marginTop: 12 }}>
+                        {r.filings.toLocaleString()} Filings · Avg. ${r.avg_salary.toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Checklist Card */}
+              <div style={cardStyle}>
+                <h3 style={cardTitleStyle}>7-Day Implementation</h3>
+                <div style={{ marginTop: 24, display: 'grid', gap: 16 }}>
+                  {plan.weekly_checklist.map((item, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                      <div style={{ 
+                        width: 28, 
+                        height: 28, 
+                        borderRadius: 999, 
+                        background: '#0f172a', 
+                        color: '#fff', 
+                        display: 'grid', 
+                        placeItems: 'center', 
+                        fontSize: 13, 
+                        fontWeight: 800,
+                        flexShrink: 0
+                      }}>{idx + 1}</div>
+                      <div style={{ fontSize: 15, color: '#475569', lineHeight: 1.6, fontWeight: 500 }}>{item}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
           </div>
+        ) : null}
 
-          <div style={cardStyle}>
-            <h2 style={{ margin: '0 0 6px' }}>7-day action checklist</h2>
-            <ol style={{ margin: '8px 0 0 18px' }}>
-              {plan.weekly_checklist.map((i) => <li key={i} style={{ marginBottom: 6 }}>{i}</li>)}
-            </ol>
-          </div>
+        <div style={{ marginTop: 80, pt: 32, borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+          <p style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.6, maxWidth: 800, margin: '0 auto' }}>
+            Roadmaps are algorithmically generated based on historical DOL data filters. Performance in a specific role or location is indicative of demand but does not guarantee employment or legal visa status.
+          </p>
         </div>
-      ) : null}
+      </div>
+
     </div>
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  border: '1px solid #d4d4d8',
-  borderRadius: 10,
-  padding: '10px 12px',
-  fontSize: 14,
-};
-
-const btnStyle: React.CSSProperties = {
-  border: 'none',
-  background: '#4f46e5',
-  color: '#fff',
-  borderRadius: 10,
-  padding: '10px 14px',
-  fontWeight: 700,
-  cursor: 'pointer',
-};
-
-const secondaryBtnStyle: React.CSSProperties = {
-  border: '1px solid #c7d2fe',
-  background: '#eef2ff',
-  color: '#3730a3',
-  borderRadius: 10,
-  padding: '10px 14px',
-  fontWeight: 700,
-  cursor: 'pointer',
-};
-
-const cardStyle: React.CSSProperties = {
-  border: '1px solid #e4e4e7',
-  borderRadius: 14,
-  padding: 14,
-  background: '#fff',
-};
-
-const shareCardStyle: React.CSSProperties = {
-  ...cardStyle,
-  border: '1px solid #ddd6fe',
-  background: 'linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%)',
-};
+const labelStyle: React.CSSProperties = { display: 'grid', gap: 8 };
+const spanLabelStyle: React.CSSProperties = { fontSize: 13, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' };
+const inputStyle: React.CSSProperties = { border: '1px solid #e2e8f0', borderRadius: 14, padding: '12px 16px', fontSize: 15, background: '#f8fafc', color: '#0f172a', outline: 'none' };
+const btnStyle: React.CSSProperties = { border: 'none', background: '#0f172a', color: '#fff', borderRadius: 14, padding: '12px 20px', fontWeight: 700, cursor: 'pointer', transition: 'background 0.2s' };
+const secondaryBtnStyle: React.CSSProperties = { border: '1px solid #e2e8f0', background: '#fff', color: '#475569', borderRadius: 14, padding: '12px 20px', fontWeight: 700, cursor: 'pointer' };
+const cardStyle: React.CSSProperties = { border: '1px solid #e2e8f0', borderRadius: 24, padding: '32px', background: '#fff', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' };
+const cardTitleStyle: React.CSSProperties = { margin: 0, fontSize: 18, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em' };
+const shareCardStyle: React.CSSProperties = { ...cardStyle, border: '1px solid #c7d2fe', background: 'linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%)' };

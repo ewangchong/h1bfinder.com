@@ -5,7 +5,7 @@ import { getAvailableYears, getCompanyBySlug, getCompanyInsightsBySlug } from '@
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   return {
-    title: `Company ${slug}`,
+    title: `H1B Sponsor: ${slug.replace(/-/g, ' ')}`,
     alternates: { canonical: `/companies/${slug}` },
   };
 }
@@ -27,10 +27,12 @@ export default async function CompanyDetail({
     c = await getCompanyBySlug(slug, requestedYear);
   } catch (e: any) {
     return (
-      <div>
-        <h1 style={{ margin: 0 }}>Company</h1>
-        <p style={{ color: '#b00' }}>Failed to load company.</p>
-        <pre style={{ whiteSpace: 'pre-wrap', color: '#555' }}>{String(e?.message || e)}</pre>
+      <div style={{ padding: '64px 20px', textAlign: 'center' }}>
+        <h1 style={{ color: '#0f172a', fontSize: 24, fontWeight: 800 }}>Company</h1>
+        <p style={{ color: '#ef4444', marginTop: 12 }}>Failed to load company.</p>
+        <pre style={{ color: '#64748b', marginTop: 8, fontSize: 13, background: '#f8fafc', padding: 16, borderRadius: 12, display: 'inline-block' }}>
+          {String(e?.message || e)}
+        </pre>
       </div>
     );
   }
@@ -61,180 +63,275 @@ export default async function CompanyDetail({
     : globalYears;
 
   return (
-    <article>
-      <div
-        style={{
-          border: '1px solid #eee',
-          borderRadius: 16,
-          padding: 16,
-          background: '#fff',
-          boxShadow: '0 1px 0 rgba(0,0,0,0.02)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 10 }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {companyYears.map((y) => (
-              <a
-                key={y}
-                href={`/companies/${slug}?year=${y}`}
-                style={{
-                  padding: '9px 10px',
-                  borderRadius: 999,
-                  border: '1px solid #eee',
-                  background: y === year ? '#111' : '#fff',
-                  color: y === year ? '#fff' : '#111',
-                  fontWeight: 800,
-                  fontSize: 13,
-                  textDecoration: 'none',
-                }}
-              >
-                {y}
-              </a>
-            ))}
+    <article style={{ maxWidth: 1080, margin: '0 auto', paddingBottom: 64 }}>
+      
+      {/* 1. Page Header / Hero */}
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '64px 20px 48px',
+        borderBottom: '1px solid #f1f5f9',
+        marginBottom: 32
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+          <div style={{
+            width: 72,
+            height: 72,
+            borderRadius: 20,
+            background: '#f1f5f9',
+            display: 'grid',
+            placeItems: 'center',
+            fontWeight: 800,
+            fontSize: 24,
+            color: '#475569',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+          }}>
+            {initials(c.name)}
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-            <div
-              aria-hidden
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 14,
-                background: '#EEF2FF',
-                display: 'grid',
-                placeItems: 'center',
-                fontWeight: 800,
-                color: '#3730A3',
-                flex: '0 0 auto',
-              }}
-            >
-              {initials(c.name)}
-            </div>
-            <div style={{ minWidth: 0 }}>
-              <h1 style={{ margin: 0, fontSize: 26, letterSpacing: '-0.02em' }}>{c.name}</h1>
-              <div style={{ color: '#666', fontSize: 13, marginTop: 4 }}>{hq || '—'}</div>
-            </div>
-          </div>
-
-          <span
-            style={{
-              fontSize: 12,
-              padding: '4px 10px',
-              borderRadius: 999,
-              background: '#ECFDF3',
-              color: '#027A48',
-              border: '1px solid #D1FADF',
-              flex: '0 0 auto',
-            }}
-          >
-            Active sponsor
+        
+        <h1 style={{ 
+          margin: 0, 
+          fontSize: 'clamp(32px, 5vw, 48px)', 
+          letterSpacing: '-0.04em',
+          fontWeight: 900,
+          color: '#0f172a',
+          lineHeight: 1.1
+        }}>
+          {c.name}
+        </h1>
+        
+        <div style={{ 
+          marginTop: 16, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          gap: 12,
+          flexWrap: 'wrap'
+        }}>
+          <span style={{ color: '#64748b', fontSize: 15, fontWeight: 500 }}>{hq || 'Verified Sponsor'}</span>
+          <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#cbd5e1' }} />
+          <span style={{
+            fontSize: 11,
+            fontWeight: 700,
+            padding: '4px 10px',
+            borderRadius: 999,
+            background: '#ecfdf5',
+            color: '#059669',
+            border: '1px solid #a7f3d0',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }}>
+            Active Sponsor
           </span>
         </div>
 
-        <div style={{ marginTop: 12, display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
-          <Stat label="Approval rate" value={rate === null ? '—' : `${(rate * 100).toFixed(1)}%`} />
-          <Stat label="Filings (FY)" value={filed ? filed.toLocaleString() : '—'} />
-          <Stat label="Approvals (FY)" value={approved ? approved.toLocaleString() : '—'} />
-        </div>
-
-        <div style={{ marginTop: 12, color: '#777', fontSize: 12, lineHeight: 1.5 }}>
-          FY{year} view. Data source: DOL LCA disclosure (FY{companyYears[companyYears.length - 1] ?? 'N/A'}–FY{companyYears[0] ?? 'N/A'}) aggregated by employer name. Not legal advice.
-        </div>
-      </div>
-
-      {!hasInsights ? (
-        <div style={{ ...cardStyle, marginTop: 14, textAlign: 'center', color: '#666' }}>
-          No filings found for FY{year}. Try{' '}
-          <a href={`/companies/${slug}?year=${c.last_h1b_filing_year || 2023}`} style={{ fontWeight: 800 }}>
-            FY{c.last_h1b_filing_year || 2023}
-          </a>
-          .
-        </div>
-      ) : null}
-
-      <div className="grid2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 14, marginTop: 14 }}>
-        <div style={cardStyle}>
-          <div style={{ fontWeight: 900, marginBottom: 10 }}>Top titles (by filings)</div>
-          {insights.top_titles.length ? (
-            <ol style={{ margin: 0, paddingLeft: 18 }}>
-              {insights.top_titles.map((t) => (
-                <li key={t.title} style={{ margin: '8px 0', color: '#444' }}>
-                  <div style={{ fontWeight: 800, color: '#111' }}>
-                    {t.title_slug ? (
-                      <Link href={`/titles/${t.title_slug}?year=${year}`}>
-                        {t.title}
-                      </Link>
-                    ) : (
-                      t.title
-                    )}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>
-                    Filed/Approved: <b style={{ color: '#111' }}>{t.filings.toLocaleString()}</b> /{' '}
-                    <b style={{ color: '#111' }}>{t.approvals.toLocaleString()}</b>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <div style={{ color: '#666' }}>No data.</div>
-          )}
-        </div>
-
-        <div style={cardStyle}>
-          <div style={{ fontWeight: 900, marginBottom: 10 }}>Top states (by filings)</div>
-          {insights.top_states.length ? (
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {insights.top_states.map((s: any) => (
-                <li key={s.state} style={{ margin: '8px 0' }}>
-                  <b>{s.state}</b> — {s.filings.toLocaleString()}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div style={{ color: '#666' }}>No data.</div>
-          )}
-
-          <div style={{ fontWeight: 900, margin: '14px 0 10px' }}>Yearly trend</div>
-          {insights.trend.length ? (
-            <ul style={{ margin: 0, paddingLeft: 18 }}>
-              {insights.trend.map((t: any) => (
-                <li key={t.year} style={{ margin: '6px 0' }}>
-                  FY{t.year}: <b>{t.filings.toLocaleString()}</b> filings / <b>{t.approvals.toLocaleString()}</b> approvals
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div style={{ color: '#666' }}>No data.</div>
-          )}
+        {/* Year Toggle */}
+        <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ 
+            display: 'flex', 
+            gap: 8, 
+            padding: '6px', 
+            background: '#f8fafc', 
+            borderRadius: 999,
+            border: '1px solid #e2e8f0',
+            flexWrap: 'wrap',
+            justifyContent: 'center'
+          }}>
+            {companyYears.map((y) => {
+              const isActive = y === year;
+              return (
+                <Link
+                  key={y}
+                  href={`/companies/${slug}?year=${y}`}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 999,
+                    background: isActive ? '#0f172a' : 'transparent',
+                    color: isActive ? '#fff' : '#475569',
+                    fontWeight: isActive ? 700 : 600,
+                    fontSize: 13,
+                    textDecoration: 'none',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  FY{y}
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      <style>{`
-        @media (max-width: 820px) {
-          .grid4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-        @media (max-width: 420px) {
-          .grid4 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-        }
-      `}</style>
+      <div style={{ padding: '0 20px' }}>
+        
+        {/* 2. Key Metrics Row */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', 
+          gap: 16,
+          marginBottom: 32
+        }}>
+          <BigStat label="Approval Rate" value={rate === null ? '—' : `${(rate * 100).toFixed(1)}%`} subtext={`FY${year} benchmark`} />
+          <BigStat label="Total Filings" value={filed ? filed.toLocaleString() : '—'} subtext="LCA disclosure files" />
+          <BigStat label="Total Approvals" value={approved ? approved.toLocaleString() : '—'} subtext="Certified applications" />
+        </div>
+
+        {!hasInsights ? (
+          <div style={{ 
+            marginTop: 48, 
+            textAlign: 'center', 
+            color: '#64748b', 
+            padding: '48px 24px',
+            background: '#f8fafc',
+            borderRadius: 24,
+            border: '1px dashed #e2e8f0'
+          }}>
+            No filings detected for FY{year}. Perspective shifted? Check <Link href={`/companies/${slug}?year=${c.last_h1b_filing_year || 2023}`} style={{ fontWeight: 800, color: '#0f172a' }}>FY{c.last_h1b_filing_year || 2023}</Link>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
+            
+            {/* Top Titles Card */}
+            <div style={cardStyle}>
+              <h2 style={cardTitleStyle}>Top Roles Sponsored</h2>
+              <div style={{ marginTop: 20 }}>
+                {insights.top_titles.length ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {insights.top_titles.map((t) => (
+                      <div key={t.title} style={{ 
+                        padding: '16px', 
+                        borderRadius: 16, 
+                        border: '1px solid #f1f5f9',
+                        background: '#f8fafc'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                          <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 16 }}>
+                            {t.title_slug ? (
+                              <Link href={`/titles/${t.title_slug}?year=${year}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                {t.title}
+                              </Link>
+                            ) : (
+                              t.title
+                            )}
+                          </div>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#4F46E5', background: '#EEF2FF', padding: '4px 8px', borderRadius: 8 }}>
+                            {t.filings.toLocaleString()} filings
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 13, color: '#64748b', marginTop: 8 }}>
+                          {t.approvals.toLocaleString()} approvals · {t.filings > 0 ? (t.approvals/t.filings*100).toFixed(1) : 0}% rate
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ color: '#94a3b8' }}>No title-specific data for this period.</div>
+                )}
+              </div>
+            </div>
+
+            {/* Geographic & Trend Card */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              
+              <div style={cardStyle}>
+                <h2 style={cardTitleStyle}>Geographic Focus</h2>
+                <div style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {insights.top_states.length ? (
+                    insights.top_states.map((s: any) => (
+                      <div key={s.state} style={{ 
+                        padding: '10px 16px', 
+                        borderRadius: 12, 
+                        border: '1px solid #e2e8f0',
+                        background: '#fff',
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: '#0f172a'
+                      }}>
+                        {s.state} <span style={{ color: '#64748b', fontWeight: 500, marginLeft: 4 }}>({s.filings.toLocaleString()})</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ color: '#94a3b8' }}>No geographic data.</div>
+                  )}
+                </div>
+              </div>
+
+              <div style={cardStyle}>
+                <h2 style={cardTitleStyle}>Multi-Year Trend</h2>
+                <div style={{ marginTop: 20 }}>
+                   {insights.trend.length ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      {insights.trend.map((t: any) => (
+                        <div key={t.year} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ fontWeight: 700, fontSize: 14, color: '#0f172a' }}>FY{t.year}</div>
+                          <div style={{ flex: 1, height: 8, background: '#f1f5f9', margin: '0 16px', borderRadius: 4, overflow: 'hidden', position: 'relative' }}>
+                             <div style={{ 
+                               position: 'absolute', 
+                               left: 0, 
+                               top: 0, 
+                               bottom: 0, 
+                               width: `${Math.min(100, (t.filings / filed) * 100)}%`, 
+                               background: '#4F46E5',
+                               borderRadius: 4
+                             }} />
+                          </div>
+                          <div style={{ fontWeight: 800, fontSize: 13, color: '#475569', minWidth: 80, textAlign: 'right' }}>
+                            {t.filings.toLocaleString()} <span style={{ color: '#94a3b8', fontWeight: 500 }}>cases</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ color: '#94a3b8' }}>No historical trend data.</div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        <div style={{ marginTop: 64, borderTop: '1px solid #f1f5f9', paddingTop: 24, textAlign: 'center' }}>
+          <p style={{ color: '#94a3b8', fontSize: 13, lineHeight: 1.6, maxWidth: 800, margin: '0 auto' }}>
+             Data is aggregated from U.S. Department of Labor (DOL) LCA disclosure records. This represents historical filing patterns and satisfies no guarantee of future sponsorship or visa eligibility. Not legal advice.
+          </p>
+        </div>
+      </div>
+
     </article>
   );
 }
 
 const cardStyle: React.CSSProperties = {
-  border: '1px solid #eee',
-  borderRadius: 16,
-  padding: 16,
+  border: '1px solid #e2e8f0',
+  borderRadius: 24,
+  padding: 24,
   background: '#fff',
-  boxShadow: '0 1px 0 rgba(0,0,0,0.02)',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
 };
 
-function Stat({ label, value }: { label: string; value: string }) {
+const cardTitleStyle: React.CSSProperties = {
+  margin: 0,
+  fontSize: 18,
+  fontWeight: 800,
+  color: '#0f172a',
+  letterSpacing: '-0.02em'
+};
+
+function BigStat({ label, value, subtext }: { label: string; value: string; subtext: string }) {
   return (
-    <div style={{ border: '1px solid #F0F0F0', borderRadius: 12, padding: '10px 10px' }}>
-      <div style={{ color: '#666', fontSize: 12 }}>{label}</div>
-      <div style={{ fontWeight: 800, marginTop: 4 }}>{value}</div>
+    <div style={{ 
+      border: '1px solid #e2e8f0', 
+      borderRadius: 20, 
+      padding: '24px', 
+      background: '#fff',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      <div style={{ color: '#64748b', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
+      <div style={{ fontWeight: 900, marginTop: 12, fontSize: 32, color: '#0f172a', letterSpacing: '-0.04em' }}>{value}</div>
+      <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 8, fontWeight: 500 }}>{subtext}</div>
     </div>
   );
 }

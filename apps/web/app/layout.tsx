@@ -7,17 +7,18 @@ import TranslateToggle from './TranslateToggle';
 
 const navLink: React.CSSProperties = {
   textDecoration: 'none',
-  color: '#111',
+  color: '#0f172a',
   fontSize: 14,
   fontWeight: 600,
+  transition: 'color 0.2s',
 };
 
 const navItems = [
-  { href: '/companies', label: 'Top Sponsors', lowPriority: false },
-  { href: '/titles', label: 'Top Jobs', lowPriority: false },
-  { href: '/plan', label: 'My Plan', lowPriority: true },
-  { href: '/chat', label: 'AI Chat', lowPriority: false },
-  { href: '/blog', label: 'Blog', lowPriority: false },
+  { href: '/companies', label: 'Top Sponsors' },
+  { href: '/titles', label: 'Top Jobs' },
+  { href: '/plan', label: 'My Plan' },
+  { href: '/chat', label: 'AI Chat' },
+  { href: '/blog', label: 'Blog' },
 ] as const;
 
 export const metadata: Metadata = {
@@ -48,6 +49,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        {/* Google Fonts - Inter */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
         {/* Google tag (gtag.js) — hard coded */}
         <>
           <Script
@@ -77,11 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link
                   key={item.href}
                   href={item.href}
-                  style={{
-                    ...navLink,
-                    opacity: item.lowPriority ? 0.72 : 1,
-                    fontWeight: item.lowPriority ? 500 : 700,
-                  }}
+                  style={navLink}
                 >
                   {item.label}
                 </Link>
