@@ -1,0 +1,7 @@
+interface:
+  display_name: "H1B Sponsor Finder"
+  short_description: "Find H1B sponsor companies and filing-history signals"
+  default_prompt: "Use $h1b-finder when the user asks about H1B sponsor companies, visa sponsorship employers, H1B-friendly employers, companies that filed H1B, or sponsor history by company, role, city, state, or year."
+
+policy:
+  allow_implicit_invocation: true
