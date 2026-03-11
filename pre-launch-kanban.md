@@ -1,4 +1,4 @@
-# H1B Friendly 上线冲刺看板 (Pre-launch Kanban)
+# H1B Finder 上线冲刺看板 (Pre-launch Kanban)
 
 | 任务ID | 任务描述 | 负责人 | 状态 | 截止时间 | GitHub Issue |
 | :--- | :--- | :--- | :--- | :--- | :--- |

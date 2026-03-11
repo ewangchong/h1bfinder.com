@@ -1,11 +1,11 @@
-# 🇺🇸 H1B Friendly
+# 🇺🇸 H1B Finder
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-black)](https://nextjs.org/)
 [![Fastify](https://img.shields.io/badge/Backend-Fastify-000000?style=flat&logo=fastify&logoColor=white)](https://www.fastify.io/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%2016-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-**H1B Friendly** is a high-performance, open-source platform for exploring millions of U.S. Department of Labor (DOL) LCA filings. It helps users understand sponsorship trends, salary benchmarks, and employer patterns through a fast web experience designed to run on modest infrastructure.
+**H1B Finder** is a high-performance, open-source platform for exploring millions of U.S. Department of Labor (DOL) LCA filings. It helps users understand sponsorship trends, salary benchmarks, and employer patterns through a fast web experience designed to run on modest infrastructure.
 
 The product also includes an AI assistant that helps users explore sponsor and salary questions based on the local dataset.
 
@@ -13,7 +13,7 @@ The product also includes an AI assistant that helps users explore sponsor and s
 
 ## 👥 Team
 
-H1B Friendly is maintained by a small specialized AI team with clear operating boundaries. Rather than letting multiple agents operate in an unstructured loop, we separate **executive coordination, program management, organizational support, and functional execution**.
+H1B Finder is maintained by a small specialized AI team with clear operating boundaries. Rather than letting multiple agents operate in an unstructured loop, we separate **executive coordination, program management, organizational support, and functional execution**.
 
 ### Public-facing team roles
 

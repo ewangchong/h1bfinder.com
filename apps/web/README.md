@@ -1,6 +1,6 @@
 # H1B Friend (Next.js Web)
 
-This is the SEO-first Next.js React frontend for H1B Friendly.
+This is the SEO-first Next.js React frontend for H1B Finder.
 
 ## Requirements
 
