@@ -2,6 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getAvailableYears, getCompanyBySlug, getCompanyInsightsBySlug } from '@/lib/h1bApi';
 
+type TrendPoint = { year: number; filings: number; approvals: number };
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   return {
@@ -54,6 +56,7 @@ export default async function CompanyDetail({
   const filed = c.h1b_applications_filed ?? 0;
   const approved = c.h1b_applications_approved ?? 0;
   const rate = filed > 0 ? approved / filed : null;
+  const stability = getSponsorStability(insights.trend ?? []);
 
   const hq = [c.headquarters_city, c.headquarters_state, c.headquarters_country].filter(Boolean).join(', ');
 
@@ -175,6 +178,12 @@ export default async function CompanyDetail({
           <BigStat label="Approval Rate" value={rate === null ? '—' : `${(rate * 100).toFixed(1)}%`} subtext={`FY${year} benchmark`} />
           <BigStat label="Total Filings" value={filed ? filed.toLocaleString() : '—'} subtext="LCA disclosure files" />
           <BigStat label="Total Approvals" value={approved ? approved.toLocaleString() : '—'} subtext="Certified applications" />
+          <BigStat
+            label="Sponsor Stability"
+            value={stability.label}
+            subtext={stability.explanation}
+            valueColor={stability.color}
+          />
         </div>
 
         {!hasInsights ? (
@@ -319,21 +328,110 @@ const cardTitleStyle: React.CSSProperties = {
   letterSpacing: '-0.02em'
 };
 
-function BigStat({ label, value, subtext }: { label: string; value: string; subtext: string }) {
+function BigStat({
+  label,
+  value,
+  subtext,
+  valueColor,
+}: {
+  label: string;
+  value: string;
+  subtext: string;
+  valueColor?: string;
+}) {
   return (
-    <div style={{ 
-      border: '1px solid #e2e8f0', 
-      borderRadius: 20, 
-      padding: '24px', 
-      background: '#fff',
-      display: 'flex',
-      flexDirection: 'column'
-    }}>
+    <div
+      style={{
+        border: '1px solid #e2e8f0',
+        borderRadius: 20,
+        padding: '24px',
+        background: '#fff',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <div style={{ color: '#64748b', fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
-      <div style={{ fontWeight: 900, marginTop: 12, fontSize: 32, color: '#0f172a', letterSpacing: '-0.04em' }}>{value}</div>
+      <div
+        style={{
+          fontWeight: 900,
+          marginTop: 12,
+          fontSize: 32,
+          color: valueColor || '#0f172a',
+          letterSpacing: '-0.04em',
+        }}
+      >
+        {value}
+      </div>
       <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 8, fontWeight: 500 }}>{subtext}</div>
     </div>
   );
+}
+
+function getSponsorStability(trend: TrendPoint[]) {
+  if (!trend.length) {
+    return {
+      label: 'Moderate',
+      color: '#b45309',
+      explanation: 'No multi-year filing history available yet.',
+    };
+  }
+
+  const sorted = [...trend].sort((a, b) => a.year - b.year);
+  const lastYear = sorted[sorted.length - 1].year;
+  const firstYear = Math.max(sorted[0].year, lastYear - 4);
+  const filingsByYear = new Map(sorted.map((point) => [point.year, point.filings]));
+  const recentSeries = Array.from({ length: lastYear - firstYear + 1 }, (_, index) => {
+    const year = firstYear + index;
+    return { year, filings: filingsByYear.get(year) ?? 0 };
+  });
+
+  if (recentSeries.length < 2) {
+    return {
+      label: 'Moderate',
+      color: '#b45309',
+      explanation: `Only ${recentSeries.length} recent filing year on record.`,
+    };
+  }
+
+  const filings = recentSeries.map((point) => point.filings);
+  const mean = filings.reduce((sum, value) => sum + value, 0) / filings.length;
+  const variance = filings.reduce((sum, value) => sum + (value - mean) ** 2, 0) / filings.length;
+  const coefficientOfVariation = mean > 0 ? Math.sqrt(variance) / mean : 0;
+  const zeroYears = filings.filter((value) => value === 0).length;
+  const activeYears = filings.length - zeroYears;
+  const yoySwings = recentSeries
+    .slice(1)
+    .map((point, index) => {
+      const previous = recentSeries[index].filings;
+      if (previous === 0) return point.filings > 0 ? 1 : 0;
+      return Math.abs(point.filings - previous) / previous;
+    });
+  const avgSwing = yoySwings.length
+    ? yoySwings.reduce((sum, value) => sum + value, 0) / yoySwings.length
+    : 0;
+
+  if (zeroYears === 0 && activeYears >= 3 && coefficientOfVariation <= 0.35) {
+    return {
+      label: 'Stable',
+      color: '#059669',
+      explanation: `${activeYears} straight filing years with ${(avgSwing * 100).toFixed(0)}% average volume swings.`,
+    };
+  }
+
+  if (zeroYears > 0 || coefficientOfVariation >= 0.75 || avgSwing >= 0.6) {
+    const gapText = zeroYears > 0 ? `${zeroYears} zero/gap year${zeroYears > 1 ? 's' : ''}` : `${(avgSwing * 100).toFixed(0)}% average swings`;
+    return {
+      label: 'Volatile',
+      color: '#dc2626',
+      explanation: `${gapText} across the last ${recentSeries.length} years of filings.`,
+    };
+  }
+
+  return {
+    label: 'Moderate',
+    color: '#b45309',
+    explanation: `${activeYears} active years with ${(avgSwing * 100).toFixed(0)}% average filing swings recently.`,
+  };
 }
 
 function initials(name: string) {
