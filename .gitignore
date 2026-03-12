@@ -43,6 +43,7 @@ terraform.rc
 *.pem
 
 # internal / draft docs (do not publish)
+local-notes/
 pre-launch-kanban.md
 docs/legal_drafts_*.md
 docs/internal/
