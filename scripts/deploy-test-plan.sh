@@ -70,8 +70,11 @@ check_page_content() {
     fi
   done
 
-  if [[ -n "${expected_text}" ]] && ! grep -Fq "${expected_text}" <<<"${body}"; then
-    fail "${label} missing expected text: ${expected_text}"
+  if [[ -n "${expected_text}" ]]; then
+    local html_escaped_expected="${expected_text//&/&amp;}"
+    if ! grep -Fq "${expected_text}" <<<"${body}" && ! grep -Fq "${html_escaped_expected}" <<<"${body}"; then
+      fail "${label} missing expected text: ${expected_text}"
+    fi
   fi
 }
 
