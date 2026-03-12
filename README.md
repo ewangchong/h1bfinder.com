@@ -5,62 +5,23 @@
 [![Fastify](https://img.shields.io/badge/Backend-Fastify-000000?style=flat&logo=fastify&logoColor=white)](https://www.fastify.io/)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%2016-336791?style=flat&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 
-**H1B Finder** is a high-performance, open-source platform designed to analyze millions of US Department of Labor (DOL) LCA filings. It provides instant insights into sponsorship trends, salary benchmarks, and company rankings, optimized to run on resource-constrained infrastructure.
-
-The homepage now includes an AI chat launcher that opens a modal assistant with a blurred backdrop, so users can ask sponsor and salary questions without leaving the rankings view.
+**H1B Finder** is a high-performance, open-source platform designed to analyze millions of U.S. Department of Labor (DOL) LCA filings. It provides instant insights into sponsorship trends, salary benchmarks, and employer patterns, optimized to run on resource-constrained infrastructure.
 
 ---
 
-## 👥 Team Structure
+## ✨ Key Features
 
-H1B Finder is built by a cross-functional AI-native team with clear ownership across coordination, execution management, organizational support, engineering, infrastructure, growth, finance, and compliance.
-
-### Public-facing roles
-
-- **CEO** — sets direction, priorities, and final decisions
-- **Chief of Staff** — single coordination entry point across teams
-- **Management / Program Management** — planning, dependencies, owners, deadlines, and execution rhythm
-- **Engineering** — product development, technical implementation, and feature delivery
-- **DevOps / Infrastructure** — deployment, reliability, performance, and release safety
-- **Marketing / Growth** — positioning, launch narrative, content, and community communication
-- **Finance** — budget, cost controls, and capacity trade-offs
-- **Legal / Compliance** — compliance, licensing, privacy, and external legal-risk review
-
-### Team structure
-
-```mermaid
-graph TD
-    CEO[CEO]
-    COS[Chief of Staff\nOverall coordination]
-    MGMT[Management / Program Management\nExecution tracking & coordination]
-    ENG[Engineering\nProduct engineering]
-    DEVOPS[DevOps / Infrastructure\nInfra, reliability, CI/CD]
-    MKT[Marketing / Growth\nBrand, content, growth]
-    FIN[Finance\nBudget, ROI, resource planning]
-    LEGAL[Legal / Compliance\nCompliance, privacy, legal risk]
-
-    CEO --> COS
-    COS --> MGMT
-    COS --> ENG
-    COS --> DEVOPS
-    COS --> MKT
-    COS --> FIN
-    COS --> LEGAL
-```
-
-### Operating principles
-
-1. **Chief of Staff is the single coordination entry point** for cross-team execution.
-2. **Management acts as PMO, not as a second command center** — it drives owners, deadlines, blockers, and follow-through.
-3. **Each functional team is accountable for its own domain judgment** — engineering, operations, marketing, finance, and legal keep clear boundaries.
-
-This structure helps us move fast without losing accountability, reviewability, or execution discipline.
+- **Rankings & Trends**: Explore company-wide and job-title-level sponsorship rankings across multiple fiscal years.
+- **Sponsor Stability Indicator**: Automatically assesses employer hiring stability (Stable, Moderate, Volatile) based on historical filing volume and consistency.
+- **Salaries Benchmarking**: Normalized salary data for thousands of job roles and employers.
+- **AI-Powered Insights**: Integrated AI assistant grounded with local H1B data for natural language exploration.
+- **Blazing Fast UX**: Sub-second response times for complex aggregations on multi-million record datasets.
 
 ---
 
 ## 🏗 System Architecture
 
-We employ a modern, containerized stack optimized for high-throughput analytical queries.
+We employ a modern, containerized stack optimized for high-throughput analytical queries on a modest footprint.
 
 ```mermaid
 graph LR
@@ -68,27 +29,15 @@ graph LR
 
     subgraph AWS_EC2 [AWS Cloud]
         Caddy -->|Reverse Proxy| Web[Next.js Frontend]
-        Web -->|Rankings / Companies / Titles API Calls| Backend[Fastify Backend]
-        Web -->|Chat Status + Chat Requests| Backend
+        Web -->|API Calls| Backend[Fastify Backend]
         Backend -->|Query / Aggregate| DB[(PostgreSQL 16)]
-        Backend -->|Store / Get Cached Responses| Cache[LRU Cache]
+        Backend -->|In-memory Cache| Cache[LRU Cache]
         Backend -->|Generate Content| Gemini[Gemini API]
-        Backend -->|Persist Chat Logs| ChatLogs[(chat_logs table)]
     end
 
     subgraph Pipeline [Data Ingest]
         DOL[DOL LCA Data] -->|Python ETL| DB
     end
-
-    subgraph UX [User Experience]
-        HomeModal[Homepage AI Chat Modal]
-        ChatPage[Dedicated /chat Page]
-    end
-
-    User --> HomeModal
-    User --> ChatPage
-    HomeModal --> Web
-    ChatPage --> Web
 ```
 
 ---
@@ -97,72 +46,46 @@ graph LR
 
 Handling **4 million records** on a 2GB RAM / 2 vCPU (`t3.small`) instance required surgical optimization:
 
-### 1. Database: Covering Indexes (Index-Only Scans)
+### 1. Database: Covering Indexes
+Standard indexes were insufficient as disk I/O throttled the server. We implemented specialized **Covering Indexes** using the `INCLUDE` clause, allowing core aggregations to perform **100% in-memory** Index-Only Scans.
+- **Result**: Latency reduced from ~75s to **3s**.
 
-Standard indexes were insufficient as the constant disk I/O for row fetching throttled the server. We implemented specialized **Covering Indexes** using the `INCLUDE` clause.
+### 2. Application: LRU Caching
+Concurrent dashboard refreshes are handled via a global **LRU In-Memory Cache** at the Fastify layer.
+- **Latency**: **<2ms** (a 4,500x improvement over cold queries).
+- **TTL**: 24 hours (syncs with quarterly DOL data update cycle).
 
-- **Result**: Core aggregations perform **100% in-memory** Index-Only Scans, reducing latency from ~75s to **3s**.
+---
 
-### 2. Application: Memory-Level Caching
+## 🤖 AI Chat Assistant
 
-Even with optimized SQL, concurrent dashboard refreshes can peg the CPU. We implemented a global **LRU In-Memory Cache** at the Fastify layer.
+The product includes an H1B data assistant grounded with RAG-style context from the local dataset. It is available via:
+1.  **Dedicated `/chat` page**: For deep exploration.
+2.  **Homepage Modal**: A quick-launch assistant with a blurred backdrop for context-aware questions.
 
-- **Cache Hit Latency**: **<2ms** (a 4,500x improvement over cold queries).
-- **TTL Configuration**: Set to 24 hours to accommodate the quarterly DOL data update cycle.
+> [!NOTE]
+> Chat is disabled unless a `GEMINI_API_KEY` is configured in the environment.
 
 ---
 
 ## 📂 Project Structure
 
-- **`apps/etl`**: Python-based high-speed ingest pipeline using `Pandas` and `Psycopg2`.
+- **`apps/etl`**: Python-based high-speed ingest pipeline using `Pandas`.
 - **`apps/backend`**: Fastify REST API providing normalized H1B analytics.
-- **`apps/web`**: Next.js App Router frontend for data visualization and SEO.
-- **`infra/`**: Terraform configurations for provisioning the AWS networking and EC2 host.
-- **`scripts/`**: Operational helpers such as cache warmup and deployment-side maintenance utilities.
-- **`docker-compose.yml`**: Local and single-host production orchestration for PostgreSQL, backend, web, migrations, and Caddy.
-- **`Caddyfile`**: Reverse proxy and HTTPS entrypoint configuration for the public site.
-
----
-
-## 🤖 AI Chat
-
-The product includes an H1B data assistant that is available in two places:
-
-- The dedicated `/chat` page
-- A homepage modal launcher that opens on top of the rankings page with a blurred backdrop
-
-The assistant is not a generic chatbot. It is grounded with RAG-style context generated from the local H1B dataset, including:
-
-- The selected or latest fiscal year
-- Year-level totals for filings, approvals, and average salary
-- Top companies for the selected year
-- Top job titles for the selected year
-- Question-relevant employer and title slices pulled from the database
-
-Current behavior and limits:
-
-- The assistant answers in English
-- It is intended for sponsor trends, approval patterns, salary benchmarks, and company/title comparisons
-- It should avoid making factual claims outside the provided dataset context
-- Chat is disabled unless `GEMINI_API_KEY` is configured
-- The recommended default model is `gemini-2.5-flash`
-- Backend rate limiting is controlled by `CHAT_RATE_LIMIT_PER_MIN`
-
-When Gemini fails upstream, the API now returns the upstream model/quota message directly so production issues are easier to diagnose.
+- **`apps/web`**: Next.js App Router frontend with data visualization.
+- **`infra/`**: Terraform configurations for AWS networking and EC2 provisioning.
+- **`docker-compose.yml`**: Unified orchestration for PostgreSQL, backend, web, and Caddy.
 
 ---
 
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
-
 - Docker & Docker Compose
 - Node.js 20+
 
 ### 2. Configure Environment
-
-Create a root `.env` file before launching the stack:
-
+Create a root `.env` file:
 ```bash
 POSTGRES_PASSWORD=change_me
 GEMINI_API_KEY=your_gemini_api_key
@@ -170,42 +93,21 @@ GEMINI_MODEL=gemini-2.5-flash
 CHAT_RATE_LIMIT_PER_MIN=20
 ```
 
-`GEMINI_API_KEY` is optional if you do not want AI chat enabled.
-
 ### 3. Launch Stack
-
 ```bash
-# Clone the repository
 git clone https://github.com/ewangchong/h1bfinder.com.git
 cd h1bfinder.com
-
 docker compose up -d
-```
-
-`docker compose` will run a one-shot `migrate` job before the backend starts, so required database indexes are created automatically on fresh environments.
-
-The chat endpoint is disabled unless `GEMINI_API_KEY` is present in the root `.env` file or shell environment used for `docker compose up -d --build`.
-The recommended default model is `gemini-2.5-flash`.
-
-### 4. Ingest Data
-
-Follow the instructions in `apps/etl/README.md` to load the latest DOL datasets into your local database.
-
-### 5. Run Migrations Manually
-
-If you need to apply database changes without bringing up the full stack:
-
-```bash
-cd apps/backend
-npm run build
-npm run migrate
 ```
 
 ---
 
-## 🛡️ Security
+## 👥 Team & Principles
 
-Traffic is strictly routed through a **Caddy** reverse proxy, which manages automatic SSL certificates via Let's Encrypt and masks internal application ports (3000, 8089) from the public internet.
+H1B Finder is built by a cross-functional AI-native team with a focus on coordination and execution discipline.
+
+- **Coordination**: Led by a Chief of Staff (COS) as the single coordination entry point.
+- **Operating Principle**: Fast iteration without losing accountability or domain judgment.
 
 ---
 
