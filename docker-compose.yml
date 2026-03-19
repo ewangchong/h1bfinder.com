@@ -58,6 +58,8 @@ services:
     image: h1bfinder-web
     build:
       context: ./apps/web
+      args:
+        - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://h1bfinder.com}
     container_name: h1bfinder-web
     expose:
       - "3000"
