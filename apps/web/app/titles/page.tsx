@@ -215,7 +215,7 @@ export default async function TitlesPage({
 function TitleCard({ t, year }: { t: TitleRow; year: string }) {
   const filed = t.filings ?? 0;
   const approved = t.approvals ?? 0;
-  const rate = filed > 0 ? approved / filed : null;
+  const rate = approved > 0 && filed > 0 ? approved / filed : null;
 
   return (
     <Link
