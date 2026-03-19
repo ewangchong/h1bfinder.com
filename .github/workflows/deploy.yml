@@ -104,10 +104,17 @@ jobs:
           set -euo pipefail
 
           cd ~/h1bfriend
-
+          
+          echo "Listing service status..."
+          docker compose ps
+          
           # Give the containers a moment to start and retry if connection is refused
           echo "Checking backend health at http://127.0.0.1:8089/health..."
-          curl --fail --silent --show-error --retry 10 --retry-delay 5 --retry-connrefused http://127.0.0.1:8089/health >/dev/null
+          if ! curl --fail --silent --show-error --retry 20 --retry-delay 5 --retry-connrefused http://127.0.0.1:8089/health >/dev/null; then
+            echo "::error title=Backend Health Check Failed::Could not connect to backend on 127.0.0.1:8089"
+            docker compose logs backend --tail 100
+            exit 1
+          fi
           
           echo "Checking public API health at https://h1bfinder.com/api/v1/meta/years..."
           curl --fail --silent --show-error --insecure --retry 5 --retry-delay 2 --retry-connrefused \
