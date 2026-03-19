@@ -82,7 +82,7 @@ export default function TitlesControls({
               setParams({ keyword: keyword.trim() || null });
             }
           }}
-          placeholder="Search for an H1B role (e.g., Software Engineer)"
+          placeholder="Search for an H1B job (e.g., Software Engineer)"
         />
         <div style={{ display: 'flex', gap: 8 }}>
           <button className="btn-apply" onClick={() => setParams({ keyword: keyword.trim() || null })}>

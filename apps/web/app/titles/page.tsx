@@ -7,9 +7,9 @@ import PaginationControls from "./PaginationControls";
 const API_REVALIDATE_SECONDS = 60 * 60;
 
 export const metadata: Metadata = {
-  title: "Top H1B Job Titles",
+  title: "Top H1B Jobs",
   description:
-    "Explore job titles with high H1B sponsorship volume (based on public DOL LCA disclosure data).",
+    "Explore jobs with high H1B sponsorship volume (based on public DOL LCA disclosure data).",
   alternates: { canonical: "/titles" },
 };
 
@@ -51,7 +51,7 @@ export default async function TitlesPage({
     return (
       <div style={{ padding: "80px 20px", textAlign: "center" }}>
         <h1 style={{ color: "#0f172a", fontSize: 24, fontWeight: 800 }}>Top Jobs</h1>
-        <p style={{ color: "#ef4444", marginTop: 12 }}>Failed to load job titles from API.</p>
+        <p style={{ color: "#ef4444", marginTop: 12 }}>Failed to load jobs from API.</p>
         <pre style={{ color: "#64748b", marginTop: 8, fontSize: 13, background: "#f8fafc", padding: 16, borderRadius: 12, display: "inline-block" }}>
           {String(e?.message || e)}
         </pre>
@@ -88,7 +88,7 @@ export default async function TitlesPage({
           color: "#0f172a",
           lineHeight: 1.1
         }}>
-          Top H1B Roles
+          Top H1B Jobs
         </h1>
         <p style={{
           margin: "18px auto 0",
@@ -98,7 +98,7 @@ export default async function TitlesPage({
           fontSize: "clamp(16px, 2vw, 18px)",
           fontWeight: 500
         }}>
-          Explore job titles with the highest historical sponsorship demand. Identify roles with high approval rates to optimize your job search strategy.
+          Explore jobs with the highest historical sponsorship demand. Identify jobs with high approval rates to optimize your search strategy.
         </p>
 
         {/* Cross-Navigation Teaser */}
@@ -139,7 +139,7 @@ export default async function TitlesPage({
           gap: 16,
         }}>
           <div style={{ fontWeight: 800, fontSize: 20, color: "#0f172a" }}>
-            {totalTitles.toLocaleString()} <span style={{ color: "#64748b", fontWeight: 600, fontSize: 16 }}>Job Titles in FY{year}</span>
+            {totalTitles.toLocaleString()} <span style={{ color: "#64748b", fontWeight: 600, fontSize: 16 }}>Jobs in FY{year}</span>
           </div>
           <div style={{ color: "#64748b", fontSize: 13, fontWeight: 600, background: "#f1f5f9", padding: "4px 12px", borderRadius: 8 }}>
             Page {page + 1} of {titles.total_pages}

@@ -29,14 +29,14 @@ export const metadata: Metadata = {
     template: '%s | H1B Finder',
   },
   description:
-    'Search 4M+ official H1B sponsorship records. Find H1B-friendly companies and salary data verified by H1B Finder.',
+    'Search 4M+ official H1B sponsorship records. Find H1B-friendly sponsors and salary data verified by H1B Finder.',
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'H1B Finder',
     description:
-      'Search 4M+ official H1B sponsorship records. Find H1B-friendly companies and salary data verified by H1B Finder.',
+      'Search 4M+ official H1B sponsorship records. Find H1B-friendly sponsors and salary data verified by H1B Finder.',
     type: 'website',
     url: '/',
   },
@@ -53,7 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     name: 'H1B Finder',
     url: 'https://h1bfinder.com',
     logo: 'https://h1bfinder.com/icon.png',
-    description: 'Search 4M+ official H1B sponsorship records. Find H1B-friendly companies and salary data.',
+    description: 'Search 4M+ official H1B sponsorship records. Find H1B-friendly sponsors and salary data.',
   };
 
   return (
@@ -124,7 +124,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div style={{ maxWidth: 520 }}>
                 <div style={{ fontWeight: 800, color: '#fff' }}>H1B Finder</div>
                 <div style={{ marginTop: 6, color: '#9CA3AF' }}>
-                  Find H1B sponsorship jobs and opportunities with companies that have a track record of sponsoring international talent.
+                  Find H1B sponsorship jobs and opportunities with sponsors that have a track record of sponsoring international talent.
                 </div>
               </div>
               <div style={{ color: '#9CA3AF', flex: 1, minWidth: 0 }}>

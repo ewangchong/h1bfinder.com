@@ -8,8 +8,8 @@ import HomeRecentSearches from './HomeRecentSearches';
 import { getAvailableYears, listCompanies, getTitles } from '@/lib/h1bApi';
 
 export const metadata: Metadata = {
-  title: 'H1B Finder | Find Companies That Actually Sponsor H1B Visas',
-  description: 'Search 4M+ official DOL records. Find H1B-friendly companies, job titles, and salary history. Generate a personalized H1B action plan today.',
+  title: 'H1B Finder | Find Sponsors That Actually Sponsor H1B Visas',
+  description: 'Search 4M+ official DOL records. Find H1B-friendly sponsors, jobs, and salary history. Generate a personalized H1B action plan today.',
   keywords: ['h1b sponsor companies', 'companies that sponsor h1b', 'h1b jobs by company', 'top h1b sponsors', 'h1b database', 'h1b plan'],
   alternates: { canonical: '/' },
 };
@@ -26,15 +26,15 @@ const JOURNEY_PATHS = [
     href: '/companies',
     kicker: 'Data Research',
     title: 'Browse H1B-Friendly Employers',
-    copy: 'Access filing history for over 50,000 companies. Compare approval counts, salary benchmarks, and consistency across recent fiscal years.',
-    linkLabel: 'Filter Companies',
+    copy: 'Access filing history for over 50,000 sponsors. Compare approval counts, salary benchmarks, and consistency across recent fiscal years.',
+    linkLabel: 'Filter Sponsors',
   },
   {
     href: '/titles',
     kicker: 'Skill Validation',
-    title: 'Identify High-Demand Job Titles',
+    title: 'Identify High-Demand Jobs',
     copy: 'Discover which roles have the strongest historical sponsorship signals to focus your applications where you have the best chance of success.',
-    linkLabel: 'Explore Titles',
+    linkLabel: 'Explore Jobs',
   },
 ];
 
@@ -72,12 +72,12 @@ export default async function HomePage({
       <section className="landing-hero">
         <div className="landing-hero-eyebrow">4M+ records • FY2025 Data • Official DOL Source</div>
         <h1 className="landing-hero-title">
-          Find companies that actually
+          Find employers that actually
           <br />
           <span className="landing-hero-highlight">sponsor H1B visas.</span>
         </h1>
         <p className="landing-hero-copy">
-          Stop applying blindly. Search verified filing history to identify H1B-friendly employers, salary benchmarks, and job titles before you wasting time on applications.
+          Stop applying blindly. Search verified filing history to identify H1B-friendly employers, salary benchmarks, and jobs before you wasting time on applications.
         </p>
 
         <HomeHeroActions />
@@ -143,10 +143,10 @@ export default async function HomePage({
         <div>
           <div className="landing-module-head">
             <div>
-              <h2 className="landing-module-title">Top Job Titles</h2>
+              <h2 className="landing-module-title">Top Jobs</h2>
               <div className="landing-module-copy">Roles showing strongest sponsorship demand</div>
             </div>
-            <Link href="/titles" className="landing-module-link">See all titles →</Link>
+            <Link href="/titles" className="landing-module-link">See all jobs →</Link>
           </div>
           <div className="landing-card-stack">
             {topTitles.map((t) => (
@@ -181,11 +181,11 @@ export default async function HomePage({
           <div className="landing-faq-grid">
             <div className="landing-faq-item">
               <h3>What is H1B Finder?</h3>
-              <p>H1B Finder is a data tool designed to help international job seekers find H1B-friendly companies. We aggregate millions of official Department of Labor disclosure records into a searchable interface.</p>
+              <p>H1B Finder is a data tool designed to help international job seekers find H1B-friendly sponsors. We aggregate millions of official Department of Labor disclosure records into a searchable interface.</p>
             </div>
             <div className="landing-faq-item">
-              <h3>Which companies sponsor the most H1B visas?</h3>
-              <p>Companies like Amazon, Google, Microsoft, and large consulting firms (Infosys, Tata) are historically top sponsors. You can browse our <Link href="/companies" style={{color: '#4f46e5', fontWeight: 700}}>Top Sponsors</Link> page for the latest rankings.</p>
+              <h3>Which employers sponsor the most H1B visas?</h3>
+              <p>Employers like Amazon, Google, Microsoft, and large consulting firms (Infosys, Tata) are historically top sponsors. You can browse our <Link href="/companies" style={{color: '#4f46e5', fontWeight: 700}}>Top Sponsors</Link> page for the latest rankings.</p>
             </div>
             <div className="landing-faq-item">
               <h3>Does an LCA filing guarantee a job opening?</h3>

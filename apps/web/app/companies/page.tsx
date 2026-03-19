@@ -7,7 +7,7 @@ import PaginationControls from "./PaginationControls";
 export const metadata: Metadata = {
   title: "Top H1B Sponsors",
   description:
-    "Explore companies with proven H1B sponsorship track records (based on public DOL LCA disclosure data).",
+    "Explore sponsors with proven H1B sponsorship track records (based on public DOL LCA disclosure data).",
   alternates: { canonical: "/companies" },
 };
 
@@ -44,7 +44,7 @@ export default async function CompaniesPage({
     return (
       <div style={{ padding: "80px 20px", textAlign: "center" }}>
         <h1 style={{ color: "#0f172a", fontSize: 24, fontWeight: 800 }}>Top Sponsors</h1>
-        <p style={{ color: "#ef4444", marginTop: 12 }}>Failed to load companies from API.</p>
+        <p style={{ color: "#ef4444", marginTop: 12 }}>Failed to load sponsors from API.</p>
         <pre style={{ color: "#64748b", marginTop: 8, fontSize: 13, background: "#f8fafc", padding: 16, borderRadius: 12, display: "inline-block" }}>
           {String(e?.message || e)}
         </pre>
@@ -110,7 +110,7 @@ export default async function CompaniesPage({
             border: "1px solid #e2e8f0",
             transition: "all 0.2s"
           }}>
-            <span>Looking for specific roles? Explore Top Jobs</span>
+            <span>Looking for specific jobs? Explore Top Jobs</span>
             <span style={{ color: "#94a3b8" }}>→</span>
           </Link>
         </div>

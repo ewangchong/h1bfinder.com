@@ -148,7 +148,7 @@ export default function PlanPage() {
   function buildShareText() {
     if (!plan) return '';
     const topCompany = plan.recommendations[0]?.company_name || 'top H1B sponsors';
-    const title = plan.profile.target_role || 'my target role';
+    const title = plan.profile.target_role || 'my target job';
     const location = [plan.profile.target_city, plan.profile.target_state].filter(Boolean).join(', ');
     return [
       `I generated my H1B action plan for ${title}${location ? ` in ${location}` : ''}.`,
@@ -229,7 +229,7 @@ export default function PlanPage() {
           fontSize: 'clamp(16px, 2vw, 18px)',
           fontWeight: 500
         }}>
-          Generate a data-backed roadmap based on your target role and location. We’ll identify top matching sponsors and build a 7-day checklist for your search.
+          Generate a data-backed roadmap based on your target job and location. We’ll identify top matching sponsors and build a 7-day checklist for your search.
         </p>
 
         {/* Cross-Navigation Teaser */}
@@ -269,7 +269,7 @@ export default function PlanPage() {
           <form onSubmit={onSubmit} style={{ display: 'grid', gap: 24 }}>
             <div style={{ display: 'grid', gap: 20, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
               <label style={labelStyle}>
-                <span style={spanLabelStyle}>Target role</span>
+                <span style={spanLabelStyle}>Target job</span>
                 <input value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder="e.g. Software Engineer" style={inputStyle} required />
               </label>
               <label style={labelStyle}>
@@ -390,7 +390,7 @@ export default function PlanPage() {
 
         <div style={{ marginTop: 80, paddingTop: 32, borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
           <p style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.6, maxWidth: 800, margin: '0 auto' }}>
-            Roadmaps are algorithmically generated based on historical DOL data filters. Performance in a specific role or location is indicative of demand but does not guarantee employment or legal visa status.
+            Roadmaps are algorithmically generated based on historical DOL data filters. Performance in a specific job or location is indicative of demand but does not guarantee employment or legal visa status.
           </p>
         </div>
       </div>

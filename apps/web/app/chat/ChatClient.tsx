@@ -20,18 +20,18 @@ type ChatClientProps = {
 };
 
 const SUGGESTED_QUESTIONS = [
-  'Which companies had the most H1B approvals in the latest year?',
-  'Which job titles show the highest average salaries?',
-  'Compare Amazon and Google for H1B approvals and salary trends.',
-  'What changed in H1B sponsor rankings between 2024 and 2025?',
-  'Which companies are strongest for software engineer sponsorship?',
+  'Which sponsors had the most H1B approvals in the latest year?',
+  'Which jobs show the highest average salaries?',
+  'What is the typical H1B salary for a Data Scientist at Meta?',
+  'Are there specific locations where Apple files the most petitions?',
+  'Which sponsors are strongest for software engineer sponsorship?',
 ] as const;
 
 export default function ChatClient({ mode = 'page', onClose }: ChatClientProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      text: 'Hi! I am your H1B data assistant. Ask me about sponsor trends, approvals, salary benchmarks, or company-title patterns.',
+      text: 'Hi! I am your H1B data assistant. Ask me about sponsor trends, approvals, salary benchmarks, or sponsor-job patterns.',
     },
   ]);
   const [input, setInput] = useState('');

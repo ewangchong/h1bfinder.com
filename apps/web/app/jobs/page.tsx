@@ -13,8 +13,8 @@ export default function JobsPage() {
       <div style={{ textAlign: 'center', padding: '18px 0 6px' }}>
         <h1 style={{ margin: 0, fontSize: 34, letterSpacing: '-0.02em' }}>Jobs</h1>
         <p style={{ margin: '10px auto 0', maxWidth: 820, color: '#555', lineHeight: 1.6 }}>
-          We’re focusing on historical sponsorship signals for job seekers first. Role-level insights are available under{' '}
-          <a href="/titles">Titles</a>, and company sponsor scorecards under <a href="/companies">Companies</a>.
+          We’re focusing on historical sponsorship signals for job seekers first. Job-level insights are available under{' '}
+          <a href="/titles">Jobs</a>, and sponsor scorecards under <a href="/companies">Sponsors</a>.
         </p>
       </div>
 
@@ -34,10 +34,10 @@ export default function JobsPage() {
         Job postings will return once we have enough live listings. For now, start here:
         <div style={{ marginTop: 10, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
           <a href="/titles" style={btnPrimary}>
-            Explore Titles
+            Explore Jobs
           </a>
           <a href="/companies" style={btnSecondary}>
-            Explore Companies
+            Explore Sponsors
           </a>
           <a href="/blog" style={btnSecondary}>
             Read Blog
@@ -58,7 +58,7 @@ export default function JobsPage() {
       >
         <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.02em' }}>Get H1B job alerts by email</div>
         <p style={{ margin: '8px 0 14px', color: '#555', lineHeight: 1.6 }}>
-          Save your email plus optional title, keyword, and state filters. We will store the subscription now so the backend can power future outbound job alert campaigns.
+          Save your email plus optional job, keyword, and state filters. We will store the subscription now so the backend can power future outbound job alert campaigns.
         </p>
         <JobAlertSignup />
       </div>

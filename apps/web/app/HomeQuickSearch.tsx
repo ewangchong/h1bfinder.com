@@ -5,8 +5,8 @@ import { FormEvent, useMemo, useState } from 'react';
 type TabKey = 'sponsors' | 'jobs' | 'location';
 
 const TABS: Array<{ key: TabKey; label: string; placeholder: string }> = [
-  { key: 'sponsors', label: 'Company', placeholder: 'e.g. Amazon, Capital One, EY' },
-  { key: 'jobs', label: 'Job Title', placeholder: 'e.g. Data Scientist, Software Engineer' },
+  { key: 'sponsors', label: 'Sponsor', placeholder: 'e.g. Amazon, Capital One, EY' },
+  { key: 'jobs', label: 'Job', placeholder: 'e.g. Data Scientist, Software Engineer' },
   { key: 'location', label: 'Location', placeholder: 'e.g. Virginia, Austin, CA' },
 ];
 

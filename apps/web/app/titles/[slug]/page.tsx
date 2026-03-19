@@ -21,14 +21,14 @@ export async function generateMetadata({
   const { slug } = await params;
   const sp = await searchParams;
   let titleName = slug.replace(/-/g, ' ').toUpperCase();
-  let desc = `Discover the top H1B sponsors, average salaries, and visa approval rates for ${titleName} roles.`;
+  let desc = `Discover the top H1B sponsors, average salaries, and visa approval rates for ${titleName} jobs.`;
 
   try {
     const s = await getSummary(slug, sp.year);
     if (s && s.totals) {
       titleName = s.totals.title;
       const filed = s.totals.filings?.toLocaleString() || 'multiple';
-      desc = `Discover the top H1B sponsors and visa approval rates for ${titleName} roles. Compare ${filed} recent LCA filings.`;
+      desc = `Discover the top H1B sponsors and visa approval rates for ${titleName} jobs. Compare ${filed} recent LCA filings.`;
     }
   } catch (e) {
     // fallback to slug
@@ -79,8 +79,8 @@ export default async function TitlePage({
   } catch (e: any) {
     return (
       <div style={{ padding: '64px 20px', textAlign: 'center' }}>
-        <h1 style={{ color: '#0f172a', fontSize: 24, fontWeight: 800 }}>Role Summary</h1>
-        <p style={{ color: '#ef4444', marginTop: 12 }}>Failed to load role summary.</p>
+        <h1 style={{ color: '#0f172a', fontSize: 24, fontWeight: 800 }}>Job Summary</h1>
+        <p style={{ color: '#ef4444', marginTop: 12 }}>Failed to load job summary.</p>
         <pre style={{ color: '#64748b', marginTop: 8, fontSize: 13, background: '#f8fafc', padding: 16, borderRadius: 12, display: 'inline-block' }}>
           {String(e?.message || e)}
         </pre>
