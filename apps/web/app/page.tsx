@@ -56,9 +56,19 @@ export default async function HomePage({
   const topCompanies = companiesRes.status === 'fulfilled' ? companiesRes.value.content : [];
   const topTitles = titlesRes.status === 'fulfilled' ? titlesRes.value : [];
   const allTitles = allTitlesRes.status === 'fulfilled' ? allTitlesRes.value.map(t => ({ title: t.title, slug: t.slug })) : [];
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'H1B Finder',
+    url: 'https://h1bfinder.com',
+  };
 
   return (
     <div className="landing-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
       <section className="landing-hero">
         <div className="landing-hero-eyebrow">4M+ records • FY2025 Data • Official DOL Source</div>
         <h1 className="landing-hero-title">

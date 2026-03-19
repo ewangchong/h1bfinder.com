@@ -38,8 +38,24 @@ export default async function BlogPostPage({
 
   if (!post) notFound();
 
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.description,
+    datePublished: new Date(post.publishedAt).toISOString(),
+    author: {
+      '@type': 'Organization',
+      name: 'H1B Finder'
+    }
+  };
+
   return (
     <article style={{ maxWidth: 820, margin: '0 auto' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
       <Link href="/blog" style={{ textDecoration: 'none', color: '#1D4ED8', fontWeight: 700, fontSize: 14 }}>
         {'<- Back to Blog'}
       </Link>
