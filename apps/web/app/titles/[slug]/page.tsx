@@ -20,8 +20,23 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const sp = await searchParams;
+  let titleName = slug.replace(/-/g, ' ').toUpperCase();
+  let desc = `Discover the top H1B sponsors, average salaries, and visa approval rates for ${titleName} roles.`;
+
+  try {
+    const s = await getSummary(slug, sp.year);
+    if (s && s.totals) {
+      titleName = s.totals.title;
+      const filed = s.totals.filings?.toLocaleString() || 'multiple';
+      desc = `Discover the top H1B sponsors and visa approval rates for ${titleName} roles. Compare ${filed} recent LCA filings.`;
+    }
+  } catch (e) {
+    // fallback to slug
+  }
+
   return {
-    title: `H1B Role: ${slug.replace(/-/g, ' ')}`,
+    title: `${titleName} H1B Salary & Top Employers`,
+    description: desc,
     alternates: { canonical: `/titles/${slug}${sp.year ? `?year=${sp.year}` : ''}` },
   };
 }

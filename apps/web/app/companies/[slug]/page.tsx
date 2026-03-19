@@ -4,11 +4,27 @@ import { getAvailableYears, getCompanyBySlug, getCompanyInsightsBySlug } from '@
 
 type TrendPoint = { year: number; filings: number; approvals: number };
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ year?: string }> }): Promise<Metadata> {
   const { slug } = await params;
+  const sp = await searchParams;
+  let companyName = slug.replace(/-/g, ' ').toUpperCase();
+  let desc = `Review H1B visa sponsorship history, salaries, and approval rates for ${companyName}. Discover top roles and locations.`;
+  
+  try {
+    const c = await getCompanyBySlug(slug, sp.year);
+    if (c && c.name) {
+      companyName = c.name;
+      const filed = c.h1b_applications_filed?.toLocaleString() || 'multiple';
+      desc = `Review H1B visa sponsorship history for ${companyName}. See top roles, locations, and data from ${filed} recent LCA certifications.`;
+    }
+  } catch (e) {
+    // fallback to slug
+  }
+
   return {
-    title: `H1B Sponsor: ${slug.replace(/-/g, ' ')}`,
-    alternates: { canonical: `/companies/${slug}` },
+    title: `${companyName} H1B Visa Sponsorships & Salaries`,
+    description: desc,
+    alternates: { canonical: `/companies/${slug}${sp.year ? `?year=${sp.year}` : ''}` },
   };
 }
 
