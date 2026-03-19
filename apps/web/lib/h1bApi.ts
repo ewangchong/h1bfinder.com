@@ -89,10 +89,11 @@ export type TitleRow = TitleSummary & {
   approvals?: number;
 };
 
-export async function getTitles(params?: { year?: string; limit?: number }) {
+export async function getTitles(params?: { year?: string; limit?: number; keyword?: string }) {
   const sp = new URLSearchParams();
   if (params?.year) sp.set('year', params.year);
   if (params?.limit) sp.set('limit', String(params.limit));
+  if (params?.keyword) sp.set('keyword', params.keyword);
 
   const data = await fetchJson<ApiEnvelope<TitleSummary[]>>(`/api/v1/titles?${sp.toString()}`);
   return data.data;
@@ -108,17 +109,15 @@ export async function listTitles(params?: {
 }) {
   const page = params?.page ?? 0;
   const size = params?.size ?? 24;
-  const keyword = params?.keyword?.trim().toLowerCase();
+  const keyword = params?.keyword?.trim();
   const year = params?.year;
   const sortBy = params?.sortBy ?? 'filings';
   const sortDirection = params?.sortDirection ?? 'DESC';
 
-  let rows = (await getTitles({ year, limit: 500 })) as TitleRow[];
+  // If keyword is provided, we fetch up to 1000 matches from the server and then slice locally.
+  // This replaces the old "fetch top 500 then filter" logic.
+  let rows = (await getTitles({ year, limit: keyword ? 1000 : 500, keyword })) as TitleRow[];
   rows = rows.map((row) => ({ ...row, id: row.slug, approvals: row.approvals ?? 0 }));
-
-  if (keyword) {
-    rows = rows.filter((row) => row.title.toLowerCase().includes(keyword));
-  }
 
   rows.sort((a, b) => {
     if (sortBy === 'title') {

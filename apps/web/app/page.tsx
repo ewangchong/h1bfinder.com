@@ -3,14 +3,40 @@ import type { Metadata } from 'next';
 import RankingsControls from './RankingsControls';
 import HomeHeroActions from './HomeHeroActions';
 import HomeLeadCapture from './HomeLeadCapture';
+import HomeQuickSearch from './HomeQuickSearch';
+import HomeRecentSearches from './HomeRecentSearches';
 import { getAvailableYears, listCompanies, getTitles } from '@/lib/h1bApi';
 
 export const metadata: Metadata = {
-  title: 'H1B Finder: The Verified AI Skill for Your Career',
-  description: 'Grounded in 4M+ records from DOL. Bring verified H1B insights directly into your OpenClaw workspace.',
-  keywords: ['h1b', 'h1b sponsor', 'h1b database', 'h1b jobs', 'h1b visa', 'openclaw', 'ai agent'],
+  title: 'H1B Finder | Find Companies That Actually Sponsor H1B Visas',
+  description: 'Search 4M+ official DOL records. Find H1B-friendly companies, job titles, and salary history. Generate a personalized H1B action plan today.',
+  keywords: ['h1b sponsor companies', 'companies that sponsor h1b', 'h1b jobs by company', 'top h1b sponsors', 'h1b database', 'h1b plan'],
   alternates: { canonical: '/' },
 };
+
+const JOURNEY_PATHS = [
+  {
+    href: '/plan',
+    kicker: 'Recommended First Step',
+    title: 'Get Your Personalized H1B Plan',
+    copy: 'Answer a few questions to receive a tailored roadmap, recommended sponsors, and a step-by-step checklist based on your specific role and location.',
+    linkLabel: 'Generate My Plan',
+  },
+  {
+    href: '/companies',
+    kicker: 'Data Research',
+    title: 'Browse H1B-Friendly Employers',
+    copy: 'Access filing history for over 50,000 companies. Compare approval counts, salary benchmarks, and consistency across recent fiscal years.',
+    linkLabel: 'Filter Companies',
+  },
+  {
+    href: '/titles',
+    kicker: 'Skill Validation',
+    title: 'Identify High-Demand Job Titles',
+    copy: 'Discover which roles have the strongest historical sponsorship signals to focus your applications where you have the best chance of success.',
+    linkLabel: 'Explore Titles',
+  },
+];
 
 export default async function HomePage({
   searchParams,
@@ -33,76 +59,63 @@ export default async function HomePage({
 
   return (
     <div className="landing-page">
-      
-      {/* 1. Hero */}
       <section className="landing-hero">
+        <div className="landing-hero-eyebrow">4M+ records • FY2025 Data • Official DOL Source</div>
         <h1 className="landing-hero-title">
-          Give Your AI Agent<br />
-          <span className="landing-hero-highlight">Verified H1B Intelligence</span>
+          Find companies that actually
+          <br />
+          <span className="landing-hero-highlight">sponsor H1B visas.</span>
         </h1>
         <p className="landing-hero-copy">
-          Stop searching manually. Install the official OpenClaw skill to query millions of DOL sponsorship records directly from your workspace.
+          Stop applying blindly. Search verified filing history to identify H1B-friendly employers, salary benchmarks, and job titles before you wasting time on applications.
         </p>
 
-        {/* Terminal Block */}
-        <div className="landing-terminal">
-          <div className="landing-terminal-lights">
-            <div className="landing-terminal-light landing-terminal-light-red" />
-            <div className="landing-terminal-light landing-terminal-light-amber" />
-            <div className="landing-terminal-light landing-terminal-light-green" />
-          </div>
-          <div className="landing-terminal-command">
-            <span className="landing-terminal-prompt">$</span>{' '}
-            <span className="landing-terminal-value">npx clawhub install h1b-finder</span>
-          </div>
-          <div className="landing-terminal-examples">
-            <div><strong className="landing-terminal-label">Example:</strong> "Which Austin companies sponsor Data Scientists?"</div>
-            <div><strong className="landing-terminal-label">Example:</strong> "Compare H1B salaries for Meta and Apple"</div>
-          </div>
-        </div>
-
-        {/* Hero CTAs */}
         <HomeHeroActions />
-      </section>
-
-      {/* 2. Proof Strip */}
-      <section className="landing-proof-strip">
-        <div className="landing-proof-metric">
-          <div className="landing-proof-value">4M+</div>
-          <div className="landing-proof-label">Official DOL Records</div>
-        </div>
-        <div className="landing-proof-divider" />
-        <div className="landing-proof-metric">
-          <div className="landing-proof-value">FY2025</div>
-          <div className="landing-proof-label">Latest Data Included</div>
-        </div>
-        <div className="landing-proof-divider" />
-        <div className="landing-proof-metric">
-          <div className="landing-proof-value">100%</div>
-          <div className="landing-proof-label">Verified Sponsor Signal</div>
+        
+        <div id="quick-search" className="landing-search-wrap">
+          <HomeQuickSearch />
+          <HomeRecentSearches />
         </div>
       </section>
 
       <HomeLeadCapture />
 
-      {/* 3. Lightweight Search Demo */}
-      <section className="landing-search">
-        <h2 className="landing-section-title">Test the Database</h2>
-        <p className="landing-section-copy">Search public LCA disclosures directly on the web before integrating the agent.</p>
-        <RankingsControls defaultYear={year} years={years} titles={allTitles} />
+      <section className="landing-proof-strip">
+        <div className="landing-proof-metric">
+          <div className="landing-proof-value">4M+</div>
+          <div className="landing-proof-label">Official Records</div>
+        </div>
+        <div className="landing-proof-divider" />
+        <div className="landing-proof-metric">
+          <div className="landing-proof-value">3 Paths</div>
+          <div className="landing-proof-label">Plan • Research • Map</div>
+        </div>
+        <div className="landing-proof-divider" />
+        <div className="landing-proof-metric">
+          <div className="landing-proof-value">FY2025</div>
+          <div className="landing-proof-label">Latest Official Data</div>
+        </div>
       </section>
 
-      {/* 4. Flagship Modules */}
+      <section className="landing-path-grid">
+        {JOURNEY_PATHS.map((path) => (
+          <Link key={path.href} href={path.href} className="landing-path-card">
+            <div className="landing-path-kicker">{path.kicker}</div>
+            <div className="landing-path-title">{path.title}</div>
+            <div className="landing-path-copy">{path.copy}</div>
+            <div className="landing-path-link">{path.linkLabel} →</div>
+          </Link>
+        ))}
+      </section>
+
       <section className="landing-module-grid">
-        
-        {/* Top Sponsors */}
         <div>
           <div className="landing-module-head">
             <div>
               <h2 className="landing-module-title">Top Sponsors</h2>
-              <div className="landing-module-copy">Employers filing the most H1B cases</div>
+              <div className="landing-module-copy">Employers with high historical filing volumes</div>
             </div>
-            <Link href="/companies" className="landing-module-link">View All →</Link>
+            <Link href="/companies" className="landing-module-link">See all sponsors →</Link>
           </div>
           <div className="landing-card-stack">
             {topCompanies.map((c) => (
@@ -117,14 +130,13 @@ export default async function HomePage({
           </div>
         </div>
 
-        {/* Top Jobs */}
         <div>
           <div className="landing-module-head">
             <div>
-              <h2 className="landing-module-title">Top Jobs</h2>
-              <div className="landing-module-copy">Roles with the highest sponsorship demand</div>
+              <h2 className="landing-module-title">Top Job Titles</h2>
+              <div className="landing-module-copy">Roles showing strongest sponsorship demand</div>
             </div>
-            <Link href="/titles" className="landing-module-link">View All →</Link>
+            <Link href="/titles" className="landing-module-link">See all titles →</Link>
           </div>
           <div className="landing-card-stack">
             {topTitles.map((t) => (
@@ -138,23 +150,67 @@ export default async function HomePage({
             ))}
           </div>
         </div>
-
       </section>
 
-      {/* 5. Teasers (Deprioritized) */}
       <section className="landing-teaser-grid">
         <Link href="/plan" className="landing-teaser-card">
-          <div className="landing-teaser-kicker landing-teaser-kicker-indigo">Action Plan</div>
-          <div className="landing-teaser-title">My Plan Generator</div>
-          <div className="landing-teaser-copy">Generate a personalized step-by-step roadmap from OPT to H1B based on your target role and timeline. →</div>
+          <div className="landing-teaser-kicker landing-teaser-kicker-indigo">Recommended</div>
+          <div className="landing-teaser-title">Start with a roadmap</div>
+          <div className="landing-teaser-copy">Unsure where to start? Our H1B Plan Generator builds a customized search strategy based on your role and location. →</div>
         </Link>
         <Link href="/chat" className="landing-teaser-card">
-           <div className="landing-teaser-kicker landing-teaser-kicker-sky">Ask the Data</div>
-          <div className="landing-teaser-title">Web AI Chat</div>
-          <div className="landing-teaser-copy">Don't have an OpenClaw workspace yet? Try our basic web-based AI assistant to ask questions naturally. →</div>
+          <div className="landing-teaser-kicker landing-teaser-kicker-sky">AI Assistant</div>
+          <div className="landing-teaser-title">Chat with our datasets</div>
+          <div className="landing-teaser-copy">Ask specific questions about sponsor trends or salary benchmarks using our AI-agent chat interface. →</div>
         </Link>
       </section>
 
+      <section id="faq" className="landing-faq">
+        <div className="landing-faq-container">
+          <h2 style={{ textAlign: 'center', fontSize: 32, fontWeight: 900, marginBottom: 8, letterSpacing: '-0.02em'}}>Frequently Asked Questions</h2>
+          <div className="landing-faq-grid">
+            <div className="landing-faq-item">
+              <h3>What is H1B Finder?</h3>
+              <p>H1B Finder is a data tool designed to help international job seekers find H1B-friendly companies. We aggregate millions of official Department of Labor disclosure records into a searchable interface.</p>
+            </div>
+            <div className="landing-faq-item">
+              <h3>Which companies sponsor the most H1B visas?</h3>
+              <p>Companies like Amazon, Google, Microsoft, and large consulting firms (Infosys, Tata) are historically top sponsors. You can browse our <Link href="/companies" style={{color: '#4f46e5', fontWeight: 700}}>Top Sponsors</Link> page for the latest rankings.</p>
+            </div>
+            <div className="landing-faq-item">
+              <h3>Does an LCA filing guarantee a job opening?</h3>
+              <p>No. A Labor Condition Application (LCA) filing reflects a company's intent to sponsor for a specific role at a point in time. It is a historical signal of sponsorship friendliness, not a live job board.</p>
+            </div>
+            <div className="landing-faq-item">
+              <h3>How do I get a personalized H1B plan?</h3>
+              <p>Visit our <Link href="/plan" style={{color: '#4f46e5', fontWeight: 700}}>My Plan</Link> page. Answer a few questions about your background and target state, and we will generate a tailored search roadmap for you.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="landing-power-users">
+        <div className="landing-power-users-inner">
+          <span className="landing-power-users-eyebrow">For Developers & AI Agents</span>
+          <h2 className="landing-power-users-title">OpenClaw Integration</h2>
+          <p className="landing-power-users-copy">Use H1B Finder intelligence in your own terminal or AI agents via OpenClaw skills.</p>
+          
+          <div className="landing-terminal" style={{ textAlign: 'left', background: '#0f172a', border: '1px solid #334155' }}>
+            <div className="landing-terminal-lights">
+              <div className="landing-terminal-light landing-terminal-light-red" />
+              <div className="landing-terminal-light landing-terminal-light-amber" />
+              <div className="landing-terminal-light landing-terminal-light-green" />
+            </div>
+            <div className="landing-terminal-command">
+              <span className="landing-terminal-prompt">&gt;</span>{' '}
+              <span className="landing-terminal-value">claw install h1b-finder</span>
+            </div>
+            <div className="landing-terminal-examples" style={{ color: '#64748b' }}>
+              <div><strong className="landing-terminal-label">Integration:</strong> Connect verified H1B data to your local AI coding agents</div>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

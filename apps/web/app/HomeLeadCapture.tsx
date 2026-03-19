@@ -66,11 +66,16 @@ export default function HomeLeadCapture() {
     <section id="lead-capture" className="landing-lead-section">
       <div className="landing-lead-card">
         <div>
-          <div className="landing-lead-kicker">Free Weekly Workflow</div>
-          <h2 className="landing-section-title">Get sponsor matches without checking the site every day</h2>
+          <div className="landing-lead-kicker">Free sponsor alerts</div>
+          <h2 className="landing-section-title">Get the right H1B sponsor leads in your inbox</h2>
           <p className="landing-section-copy landing-lead-copy">
-            Pick your target role and state once. We will email sponsor-heavy job alerts using the existing H1B Finder data feed.
+            Tell us your target role and state once. We will send sponsor-heavy matches so you can spend time applying instead of digging through directories.
           </p>
+          <div className="landing-lead-benefits">
+            <span>Role-specific matches</span>
+            <span>State filter included</span>
+            <span>Daily or weekly cadence</span>
+          </div>
         </div>
 
         <form onSubmit={onSubmit} className="landing-lead-form">
@@ -103,9 +108,13 @@ export default function HomeLeadCapture() {
             <option value="daily">Daily alerts</option>
           </select>
           <button type="submit" disabled={loading} className="landing-lead-submit">
-            {loading ? 'Saving...' : 'Email Me Matches'}
+            {loading ? 'Saving...' : 'Get Free Alerts'}
           </button>
         </form>
+
+        <div className="landing-lead-footnote">
+          Want to self-serve first? Use <a href="/companies">Companies</a>, <a href="/titles">Titles</a>, or generate a tailored roadmap on <a href="/plan">Plan</a>.
+        </div>
 
         {message ? <div className="landing-lead-success">{message}</div> : null}
         {error ? <div className="landing-lead-error">{error}</div> : null}

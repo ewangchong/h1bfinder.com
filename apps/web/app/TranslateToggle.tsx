@@ -89,17 +89,7 @@ export default function TranslateToggle() {
         onClick={handleToggle}
         disabled={!ready}
         title={ready ? 'Translate page' : 'Loading translator...'}
-        style={{
-          border: '1px solid #d4d4d8',
-          background: '#fff',
-          color: '#111',
-          borderRadius: 999,
-          padding: '8px 12px',
-          fontWeight: 700,
-          fontSize: 12,
-          cursor: ready ? 'pointer' : 'not-allowed',
-          opacity: ready ? 1 : 0.6,
-        }}
+        className="translate-toggle-btn"
       >
         {isZh ? 'English' : '中文'}
       </button>

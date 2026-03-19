@@ -16,6 +16,10 @@ const envSchema = z.object({
   GEMINI_MODEL: z.string().default('gemini-2.5-flash'),
   CHAT_RATE_LIMIT_PER_MIN: z.coerce.number().int().min(1).max(120).default(20),
   ADMIN_TOKEN: z.string().optional(),
+  APP_BASE_URL: z.string().url().default('http://localhost:3000'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_REDIRECT_URI: z.string().url().optional(),
 });
 
 const env = envSchema.parse({
@@ -25,6 +29,10 @@ const env = envSchema.parse({
   GEMINI_MODEL: process.env.GEMINI_MODEL,
   CHAT_RATE_LIMIT_PER_MIN: process.env.CHAT_RATE_LIMIT_PER_MIN,
   ADMIN_TOKEN: process.env.ADMIN_TOKEN,
+  APP_BASE_URL: process.env.APP_BASE_URL,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
 });
 
 const pool = new Pool({ connectionString: env.DATABASE_URL });
@@ -62,6 +70,10 @@ const SHARED_CACHE_CONTROL = 'public, max-age=300, s-maxage=3600, stale-while-re
 
 const CHAT_WINDOW_MS = 60_000;
 const chatRateLimiter = new Map<string, { count: number; windowStart: number }>();
+const AUTH_COOKIE_NAME = 'h1bfinder_auth';
+const OAUTH_STATE_COOKIE_NAME = 'h1bfinder_oauth_state';
+const ONE_DAY_SECONDS = 60 * 60 * 24;
+const THIRTY_DAYS_SECONDS = ONE_DAY_SECONDS * 30;
 const STOP_WORDS = new Set([
   'the', 'and', 'for', 'with', 'from', 'this', 'that', 'what', 'when', 'where', 'which',
   'about', 'have', 'has', 'had', 'into', 'your', 'visa', 'h1b', 'sponsor', 'sponsorship',
@@ -84,6 +96,103 @@ function applySharedCacheHeaders(reply: any) {
 function sendCachedOk<T>(reply: any, data: T, message?: string) {
   applySharedCacheHeaders(reply);
   return reply.send(ok(data, message));
+}
+
+function parseCookies(header?: string | string[]) {
+  const raw = Array.isArray(header) ? header.join(';') : header || '';
+  return raw
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reduce<Record<string, string>>((acc, part) => {
+      const index = part.indexOf('=');
+      if (index <= 0) return acc;
+      const key = part.slice(0, index).trim();
+      const value = part.slice(index + 1).trim();
+      acc[key] = decodeURIComponent(value);
+      return acc;
+    }, {});
+}
+
+function appendCookie(reply: any, cookie: string) {
+  const current = reply.getHeader('Set-Cookie');
+  if (!current) {
+    reply.header('Set-Cookie', [cookie]);
+    return;
+  }
+  const next = Array.isArray(current) ? [...current, cookie] : [String(current), cookie];
+  reply.header('Set-Cookie', next);
+}
+
+function buildCookie(name: string, value: string, options?: {
+  maxAge?: number;
+  httpOnly?: boolean;
+  sameSite?: 'Lax' | 'Strict' | 'None';
+  path?: string;
+}) {
+  const parts = [`${name}=${encodeURIComponent(value)}`, `Path=${options?.path ?? '/'}`];
+  if (options?.maxAge !== undefined) parts.push(`Max-Age=${options.maxAge}`);
+  if (options?.httpOnly !== false) parts.push('HttpOnly');
+  parts.push('SameSite=' + (options?.sameSite ?? 'Lax'));
+  if (!env.APP_BASE_URL.startsWith('http://')) parts.push('Secure');
+  return parts.join('; ');
+}
+
+function clearCookie(reply: any, name: string) {
+  appendCookie(reply, buildCookie(name, '', { maxAge: 0 }));
+}
+
+function baseOrigin(url: string) {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return env.APP_BASE_URL;
+  }
+}
+
+function resolveReturnTo(raw?: string) {
+  const fallback = env.APP_BASE_URL;
+  if (!raw) return fallback;
+  try {
+    const url = new URL(raw, env.APP_BASE_URL);
+    const allowedOrigins = new Set([baseOrigin(env.APP_BASE_URL), 'http://localhost:3000', 'http://127.0.0.1:3000']);
+    if (!allowedOrigins.has(url.origin)) return fallback;
+    return url.toString();
+  } catch {
+    return fallback;
+  }
+}
+
+function authConfigured() {
+  return Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET && env.GOOGLE_REDIRECT_URI);
+}
+
+function createRandomToken(bytes = 32) {
+  return Buffer.from(crypto.getRandomValues(new Uint8Array(bytes))).toString('base64url');
+}
+
+async function getSessionUser(sessionToken?: string | null) {
+  if (!sessionToken) return null;
+  const res = await pool.query(
+    `SELECT
+       s.id AS session_id,
+       s.expires_at,
+       u.id,
+       u.email,
+       u.name,
+       u.avatar_url,
+       u.google_sub,
+       u.created_at,
+       u.updated_at,
+       u.last_login_at
+     FROM auth_sessions s
+     JOIN app_users u ON u.id = s.user_id
+     WHERE s.session_token = $1
+       AND s.expires_at > now()
+     LIMIT 1`,
+    [sessionToken]
+  );
+  return res.rows[0] || null;
 }
 
 function titleFromSlug(slug: string) {
@@ -230,7 +339,10 @@ app.get('/api/v1/debug/cache', async () => {
   };
 });
 
-await app.register(cors, { origin: true });
+await app.register(cors, {
+  origin: true,
+  credentials: true,
+});
 
 type PageResponse<T> = {
   content: T[];
@@ -317,6 +429,20 @@ async function logChatEvent(event: {
   }
 }
 
+async function recordUserSearch(userId: string | null, query: string | undefined, type: string) {
+  if (!userId || !query || query.trim().length <= 1) return;
+  try {
+    // Record the search query. We don't worry about duplicates for now to preserve history order.
+    await pool.query(
+      `INSERT INTO user_searches (user_id, query, type)
+       VALUES ($1, $2, $3)`,
+      [userId, query.trim(), type]
+    );
+  } catch (error) {
+    app.log.error({ error }, 'Failed to record user search');
+  }
+}
+
 function normalizeReferralCode(raw?: string | null) {
   if (!raw) return null;
   const cleaned = raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 64);
@@ -370,6 +496,192 @@ async function logGrowthEvent(event: {
 }
 
 app.get('/health', async () => ({ ok: true }));
+
+app.get('/api/v1/auth/status', async () => {
+  return ok({
+    google_enabled: authConfigured(),
+    has_google_client_id: Boolean(env.GOOGLE_CLIENT_ID),
+    has_google_client_secret: Boolean(env.GOOGLE_CLIENT_SECRET),
+    has_google_redirect_uri: Boolean(env.GOOGLE_REDIRECT_URI),
+  });
+});
+
+app.get('/api/v1/auth/me', async (req, reply) => {
+  reply.header('Cache-Control', 'private, no-store, max-age=0');
+  const cookies = parseCookies(req.headers.cookie);
+  const user = await getSessionUser(cookies[AUTH_COOKIE_NAME]);
+
+  return reply.send(ok({
+    authenticated: Boolean(user),
+    user: user
+      ? {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar_url: user.avatar_url,
+          last_login_at: user.last_login_at,
+        }
+      : null,
+  }));
+});
+
+app.get('/api/v1/auth/google/start', async (req, reply) => {
+  const query = z.object({
+    return_to: z.string().optional(),
+  }).parse(req.query ?? {});
+
+  if (!authConfigured()) {
+    return reply.code(503).send({
+      success: false,
+      error: 'google_auth_not_configured',
+      message: 'Missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REDIRECT_URI.',
+    });
+  }
+
+  const statePayload = JSON.stringify({
+    nonce: createRandomToken(18),
+    returnTo: resolveReturnTo(query.return_to),
+  });
+  const state = Buffer.from(statePayload).toString('base64url');
+  appendCookie(reply, buildCookie(OAUTH_STATE_COOKIE_NAME, state, { maxAge: 600 }));
+
+  const googleUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+  googleUrl.searchParams.set('client_id', env.GOOGLE_CLIENT_ID!);
+  googleUrl.searchParams.set('redirect_uri', env.GOOGLE_REDIRECT_URI!);
+  googleUrl.searchParams.set('response_type', 'code');
+  googleUrl.searchParams.set('scope', 'openid email profile');
+  googleUrl.searchParams.set('state', state);
+  googleUrl.searchParams.set('prompt', 'select_account');
+  googleUrl.searchParams.set('access_type', 'offline');
+
+  return reply.redirect(googleUrl.toString());
+});
+
+app.get('/api/v1/auth/google/callback', async (req, reply) => {
+  const query = z.object({
+    code: z.string().optional(),
+    state: z.string().optional(),
+    error: z.string().optional(),
+  }).parse(req.query ?? {});
+
+  const cookies = parseCookies(req.headers.cookie);
+  const expectedState = cookies[OAUTH_STATE_COOKIE_NAME];
+  clearCookie(reply, OAUTH_STATE_COOKIE_NAME);
+
+  let returnTo = env.APP_BASE_URL;
+  if (query.state) {
+    try {
+      const decoded = JSON.parse(Buffer.from(query.state, 'base64url').toString('utf8'));
+      returnTo = resolveReturnTo(decoded?.returnTo);
+    } catch {
+      returnTo = env.APP_BASE_URL;
+    }
+  }
+
+  if (query.error) {
+    return reply.redirect(`${returnTo}?auth_error=${encodeURIComponent(query.error)}`);
+  }
+
+  if (!query.code || !query.state || !expectedState || query.state !== expectedState || !authConfigured()) {
+    return reply.redirect(`${returnTo}?auth_error=invalid_oauth_state`);
+  }
+
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      code: query.code,
+      client_id: env.GOOGLE_CLIENT_ID!,
+      client_secret: env.GOOGLE_CLIENT_SECRET!,
+      redirect_uri: env.GOOGLE_REDIRECT_URI!,
+      grant_type: 'authorization_code',
+    }),
+  });
+
+  if (!tokenRes.ok) {
+    const text = await tokenRes.text();
+    app.log.error({ text }, 'Google token exchange failed');
+    return reply.redirect(`${returnTo}?auth_error=token_exchange_failed`);
+  }
+
+  const tokenJson = z.object({ access_token: z.string() }).parse(await tokenRes.json());
+  const profileRes = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+    headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+  });
+
+  if (!profileRes.ok) {
+    const text = await profileRes.text();
+    app.log.error({ text }, 'Google userinfo fetch failed');
+    return reply.redirect(`${returnTo}?auth_error=userinfo_failed`);
+  }
+
+  const profile = z.object({
+    sub: z.string(),
+    email: z.string().email(),
+    name: z.string().optional(),
+    picture: z.string().url().optional(),
+    email_verified: z.boolean().optional(),
+  }).parse(await profileRes.json());
+
+  const userRes = await pool.query(
+    `INSERT INTO app_users (email, name, avatar_url, google_sub, email_verified, last_login_at)
+     VALUES ($1, $2, $3, $4, $5, now())
+     ON CONFLICT (google_sub) DO UPDATE SET
+       email = EXCLUDED.email,
+       name = EXCLUDED.name,
+       avatar_url = EXCLUDED.avatar_url,
+       email_verified = EXCLUDED.email_verified,
+       last_login_at = now(),
+       updated_at = now()
+     RETURNING id`,
+    [profile.email.toLowerCase(), profile.name ?? null, profile.picture ?? null, profile.sub, Boolean(profile.email_verified)]
+  );
+
+  const userId = userRes.rows[0]?.id;
+  const sessionToken = createRandomToken(32);
+  await pool.query(
+    `INSERT INTO auth_sessions (user_id, session_token, expires_at, ip_address, user_agent)
+     VALUES ($1, $2, now() + interval '30 days', $3, $4)`,
+    [userId, sessionToken, req.ip || 'unknown', String(req.headers['user-agent'] || '').slice(0, 255) || null]
+  );
+
+  appendCookie(reply, buildCookie(AUTH_COOKIE_NAME, sessionToken, { maxAge: THIRTY_DAYS_SECONDS }));
+  return reply.redirect(returnTo);
+});
+
+app.post('/api/v1/auth/logout', async (req, reply) => {
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionToken = cookies[AUTH_COOKIE_NAME];
+  if (sessionToken) {
+    await pool.query('DELETE FROM auth_sessions WHERE session_token = $1', [sessionToken]);
+  }
+  clearCookie(reply, AUTH_COOKIE_NAME);
+  return reply.send(ok({ logged_out: true }));
+});
+
+app.get('/api/v1/user/recent-searches', async (req, reply) => {
+  reply.header('Cache-Control', 'private, no-store, max-age=0');
+  const cookies = parseCookies(req.headers.cookie);
+  const user = await getSessionUser(cookies[AUTH_COOKIE_NAME]);
+  if (!user) {
+    return reply.code(401).send({ success: false, error: 'unauthorized' });
+  }
+
+  const res = await pool.query(
+    `SELECT DISTINCT ON (query) 
+       query, type, created_at
+     FROM user_searches
+     WHERE user_id = $1
+     ORDER BY query, created_at DESC
+     LIMIT 8`,
+    [user.id]
+  );
+
+  // Re-sort by created_at DESC after picking distinct queries
+  const sorted = res.rows.sort((a, b) => b.created_at - a.created_at);
+
+  return reply.send(ok(sorted));
+});
 
 app.get('/api/v1/chat/status', async () => {
   return ok({
@@ -848,6 +1160,13 @@ app.get('/api/v1/companies', async (req, reply) => {
   );
 
   const payload = page(rowsRes.rows, q.page, q.size, total);
+  
+  const cookies = parseCookies(req.headers.cookie);
+  const user = await getSessionUser(cookies[AUTH_COOKIE_NAME]);
+  if (user && q.keyword) {
+    recordUserSearch(user.id, q.keyword, 'company');
+  }
+
   return sendCachedOk(reply, setCached(cacheKey, payload));
 });
 
@@ -1014,6 +1333,12 @@ app.get('/api/v1/jobs', async (req, reply) => {
     params
   );
 
+  const cookies = parseCookies(req.headers.cookie);
+  const user = await getSessionUser(cookies[AUTH_COOKIE_NAME]);
+  if (user && q.keyword) {
+    recordUserSearch(user.id, q.keyword, 'job');
+  }
+
   return reply.send(ok(page(rowsRes.rows, q.page, q.size, total)));
 });
 
@@ -1032,18 +1357,27 @@ app.get('/api/v1/titles', async (req, reply) => {
   if (cached) return sendCachedOk(reply, cached);
 
   const q = z
-
     .object({
       year: z.coerce.number().int().min(2000).max(2100).optional(),
-      limit: z.coerce.number().int().min(1).max(500).default(100),
+      limit: z.coerce.number().int().min(1).max(1000).default(100),
+      keyword: z.string().trim().min(1).optional(),
     })
     .parse(req.query);
 
   const params: any[] = [];
-  const where = q.year ? 'WHERE fiscal_year = $1 AND' : 'WHERE';
-  if (q.year) params.push(q.year);
+  const where: string[] = ["job_title IS NOT NULL AND job_title <> ''"];
 
-  params.push(q.limit);
+  if (q.year) {
+    params.push(q.year);
+    where.push(`fiscal_year = $${params.length}`);
+  }
+
+  if (q.keyword) {
+    params.push(`%${q.keyword}%`);
+    where.push(`job_title ILIKE $${params.length}`);
+  }
+
+  const whereSql = `WHERE ${where.join(' AND ')}`;
 
   const sql = `
     WITH agg AS (
@@ -1052,7 +1386,7 @@ app.get('/api/v1/titles', async (req, reply) => {
         COUNT(*)::int AS filings,
         MAX(fiscal_year)::int AS last_year
       FROM lca_raw
-      ${where} job_title IS NOT NULL AND job_title <> ''
+      ${whereSql}
       GROUP BY job_title
     )
     SELECT
@@ -1061,8 +1395,10 @@ app.get('/api/v1/titles', async (req, reply) => {
       last_year
     FROM agg
     ORDER BY filings DESC
-    LIMIT $${params.length};
+    LIMIT $${params.length + 1};
   `;
+
+  params.push(q.limit);
 
   const res = await pool.query(sql, params);
   const rows = res.rows.map((row) => ({
@@ -1153,6 +1489,12 @@ app.get('/api/v1/titles/:slug/summary', async (req, reply) => {
     ...summaryRes.rows[0],
     trend,
   };
+
+  const cookies = parseCookies(req.headers.cookie);
+  const user = await getSessionUser(cookies[AUTH_COOKIE_NAME]);
+  if (user) {
+    recordUserSearch(user.id, title, 'job_title');
+  }
 
   return sendCachedOk(reply, setCached(cacheKey, payload));
 });
@@ -1252,6 +1594,16 @@ app.get('/api/v1/rankings', async (req, reply) => {
   `;
 
   const res = await pool.query(sql, params);
+
+  const cookies = parseCookies(req.headers.cookie);
+  const user = await getSessionUser(cookies[AUTH_COOKIE_NAME]);
+  if (user) {
+    const queryParts = [q.job_title, q.company, q.city, q.state].filter(Boolean);
+    if (queryParts.length > 0) {
+      recordUserSearch(user.id, queryParts.join(' '), 'ranking');
+    }
+  }
+
   return sendCachedOk(reply, setCached(cacheKey, res.rows));
 });
 
@@ -1392,6 +1744,15 @@ app.post('/api/v1/plan/generate', async (req, reply) => {
       avg_salary: 'Average annualized wage with sanity bounds',
     },
   }));
+
+  const cookies = parseCookies(req.headers.cookie);
+  const user = await getSessionUser(cookies[AUTH_COOKIE_NAME]);
+  if (user) {
+    const queryParts = [body.target_role, body.target_city, body.target_state].filter(Boolean);
+    recordUserSearch(user.id, queryParts.join(' '), 'plan');
+  }
+
+  return reply;
 });
 
 app.get('/api/v1/rankings/summary', async (req, reply) => {
@@ -1498,6 +1859,15 @@ app.get('/api/v1/rankings/summary', async (req, reply) => {
     totals: exactRes.rows[0] || { total_filings: 0, total_approvals: 0, avg_salary: 0 },
     trend: trendRes.rows || []
   };
+
+  const cookies = parseCookies(req.headers.cookie);
+  const user = await getSessionUser(cookies[AUTH_COOKIE_NAME]);
+  if (user) {
+    const queryParts = [q.job_title, q.company, q.city, q.state].filter(Boolean);
+    if (queryParts.length > 0) {
+      recordUserSearch(user.id, queryParts.join(' '), 'ranking_summary');
+    }
+  }
 
   return sendCachedOk(reply, setCached(cacheKey, finalData));
 });

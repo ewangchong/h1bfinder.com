@@ -4,6 +4,7 @@ import './globals.css';
 import Script from 'next/script';
 import Link from 'next/link';
 import TranslateToggle from './TranslateToggle';
+import AuthStatus from './AuthStatus';
 
 const navLink: React.CSSProperties = {
   textDecoration: 'none',
@@ -90,8 +91,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               ))}
             </nav>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
               <TranslateToggle />
+              <AuthStatus />
               <div className="nav-mobile">
                 <Link href="/blog" style={navLink}>
                   Blog

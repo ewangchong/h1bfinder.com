@@ -91,6 +91,11 @@ POSTGRES_PASSWORD=change_me
 GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-2.5-flash
 CHAT_RATE_LIMIT_PER_MIN=20
+APP_BASE_URL=http://localhost:3000
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_REDIRECT_URI=http://localhost:8089/api/v1/auth/google/callback
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8089
 ```
 
 ### 3. Launch Stack
@@ -99,6 +104,21 @@ git clone https://github.com/ewangchong/h1bfinder.com.git
 cd h1bfinder.com
 docker compose up -d
 ```
+
+### 4. Google Login Setup (minimal auth)
+The repo now includes a minimal Google OAuth flow backed by PostgreSQL sessions.
+
+Required backend env vars:
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `GOOGLE_REDIRECT_URI` (for local dev: `http://localhost:8089/api/v1/auth/google/callback`)
+- `APP_BASE_URL` (for local web app: `http://localhost:3000`)
+
+Optional frontend env var:
+- `NEXT_PUBLIC_API_BASE_URL=http://localhost:8089` for local Next dev / split-origin testing.
+- In production behind Caddy, this can be left empty so the browser uses same-origin `/api`.
+
+If Google credentials are not present, the login UI still renders but sign-in remains disabled and points to the missing configuration.
 
 ---
 

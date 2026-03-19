@@ -157,6 +157,45 @@ export default async function TitlesPage({
           ))}
         </div>
 
+        {titles.content.length === 0 && (
+          <div style={{
+            textAlign: 'center',
+            padding: '80px 20px',
+            background: '#f8fafc',
+            borderRadius: 24,
+            border: '2px dashed #e2e8f0'
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, color: '#0f172a', marginBottom: 8 }}>No job titles found</h3>
+            <p style={{ color: '#64748b', fontSize: 16, maxWidth: 480, margin: '0 auto 24px' }}>
+              We couldn't find any job roles matching <strong>"{sp.keyword}"</strong> in FY{year}.
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <Link href={`/companies?keyword=${encodeURIComponent(sp.keyword || '')}`} style={{
+                padding: '12px 24px',
+                background: '#4f46e5',
+                color: '#fff',
+                borderRadius: 12,
+                fontWeight: 700,
+                textDecoration: 'none'
+              }}>
+                Search "{sp.keyword}" in Sponsors
+              </Link>
+              <Link href="/titles" style={{
+                padding: '12px 24px',
+                background: '#fff',
+                border: '1px solid #e2e8f0',
+                color: '#475569',
+                borderRadius: 12,
+                fontWeight: 700,
+                textDecoration: 'none'
+              }}>
+                Clear Search
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* 5. Pagination */}
         <div style={{ marginTop: 40 }}>
           <PaginationControls page={titles.page} totalPages={titles.total_pages} />
