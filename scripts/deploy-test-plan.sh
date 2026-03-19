@@ -110,7 +110,7 @@ run_page_health() {
 
 run_desktop_content_smoke() {
   echo "== ${MODE} smoke: full-path content smoke =="
-  check_page_content "Home" "${SITE_URL}/" "${DESKTOP_UA}" "Verified H1B Intelligence"
+  check_page_content "Home" "${SITE_URL}/" "${DESKTOP_UA}" "Find companies that actually"
   check_page_content "Companies" "${SITE_URL}/companies" "${DESKTOP_UA}" "Top Sponsors"
   check_page_content "Titles" "${SITE_URL}/titles" "${DESKTOP_UA}" "Top Jobs"
   check_page_content "Plan" "${SITE_URL}/plan" "${DESKTOP_UA}" "Generate a data-backed roadmap"
