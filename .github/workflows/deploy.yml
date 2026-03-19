@@ -105,8 +105,12 @@ jobs:
 
           cd ~/h1bfriend
 
-          curl --fail --silent --show-error http://127.0.0.1:8089/health >/dev/null
-          curl --fail --silent --show-error --insecure \
+          # Give the containers a moment to start and retry if connection is refused
+          echo "Checking backend health at http://127.0.0.1:8089/health..."
+          curl --fail --silent --show-error --retry 10 --retry-delay 5 --retry-connrefused http://127.0.0.1:8089/health >/dev/null
+          
+          echo "Checking public API health at https://h1bfinder.com/api/v1/meta/years..."
+          curl --fail --silent --show-error --insecure --retry 5 --retry-delay 2 --retry-connrefused \
             --resolve h1bfinder.com:443:127.0.0.1 \
             https://h1bfinder.com/api/v1/meta/years >/dev/null
 
