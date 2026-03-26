@@ -6,6 +6,7 @@ import HomeLeadCapture from './HomeLeadCapture';
 import HomeQuickSearch from './HomeQuickSearch';
 import HomeRecentSearches from './HomeRecentSearches';
 import { getAvailableYears, listCompanies, getTitles } from '@/lib/h1bApi';
+import { STATES } from '@/lib/states';
 
 export const metadata: Metadata = {
   title: 'H1B Finder | Find Sponsors That Actually Sponsor H1B Visas',
@@ -129,7 +130,7 @@ export default async function HomePage({
           </div>
           <div className="landing-card-stack">
             {topCompanies.map((c) => (
-              <Link key={c.id} href={`/companies/${c.slug || c.id}`} className="landing-stat-card">
+              <Link key={c.id} href={`/companies/${c.slug || c.id}-h1b-sponsorship`} className="landing-stat-card">
                 <div className="landing-card-title">{c.name}</div>
                 <div className="landing-card-stats">
                   <div><span style={{ color: '#64748b' }}>Filed:</span> <strong style={{color: '#0f172a'}}>{c.h1b_applications_filed?.toLocaleString() || '0'}</strong></div>
@@ -150,12 +151,43 @@ export default async function HomePage({
           </div>
           <div className="landing-card-stack">
             {topTitles.map((t) => (
-              <Link key={t.slug} href={`/titles/${t.slug}?year=${year}`} className="landing-stat-card">
+              <Link key={t.slug} href={`/titles/${t.slug}-h1b-sponsors?year=${year}`} className="landing-stat-card">
                 <div className="landing-card-title">{t.title}</div>
                 <div className="landing-card-stats">
                   <div><span style={{ color: '#64748b' }}>Filings:</span> <strong style={{color: '#0f172a'}}>{t.filings.toLocaleString()}</strong></div>
                   <div><span style={{ color: '#64748b' }}>Latest:</span> <strong style={{color: '#0f172a'}}>FY{t.last_year}</strong></div>
                 </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div>
+           <div className="landing-module-head">
+            <div>
+              <h2 className="landing-module-title">Top States</h2>
+              <div className="landing-module-copy">Geographic hubs with the most H1B filings</div>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12 }}>
+            {STATES.slice(0, 15).sort((a,b) => ['California', 'New York', 'Texas'].includes(a.name) ? -1 : 1).map((s) => (
+              <Link 
+                key={s.code} 
+                href={`/states/${s.name.toLowerCase().replace(/ /g, '-')}-h1b-sponsors`}
+                style={{
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: '1px solid #e2e8f0',
+                  background: '#fff',
+                  textAlign: 'center',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  color: '#1e293b',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {s.name}
               </Link>
             ))}
           </div>

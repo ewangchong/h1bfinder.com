@@ -177,7 +177,7 @@ function CompanyCard({ c }: { c: Company }) {
 
   return (
     <Link
-      href={`/companies/${c.slug || c.id}`}
+      href={`/companies/${c.slug || c.id}-h1b-sponsorship`}
       style={{
         display: "flex",
         flexDirection: "column",

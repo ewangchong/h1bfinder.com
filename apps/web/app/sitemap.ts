@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { blogPosts } from './blog/posts';
 import { listCompanies, getTitles } from '@/lib/h1bApi';
+import { STATES } from '@/lib/states';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,13 +24,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const companyUrls: MetadataRoute.Sitemap = topCompanies.filter(c => c.slug).map(c => ({
-    url: `${siteUrl}/companies/${c.slug}`,
+    url: `${siteUrl}/companies/${c.slug}-h1b-sponsorship`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
   }));
 
   const titleUrls: MetadataRoute.Sitemap = topTitles.filter(t => t.slug).map(t => ({
-    url: `${siteUrl}/titles/${t.slug}`,
+    url: `${siteUrl}/titles/${t.slug}-h1b-sponsors`,
     lastModified: new Date(),
     changeFrequency: 'weekly' as const,
   }));
@@ -45,6 +46,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(post.publishedAt),
     })),
     ...companyUrls,
-    ...titleUrls
+    ...titleUrls,
+    ...STATES.map(s => ({
+      url: `${siteUrl}/states/${s.name.toLowerCase().replace(/ /g, '-')}-h1b-sponsors`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+    })),
+    { url: `${siteUrl}/guides/how-to-find-h1b-sponsors`, lastModified: new Date() }
   ];
 }

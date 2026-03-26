@@ -219,7 +219,7 @@ function TitleCard({ t, year }: { t: TitleRow; year: string }) {
 
   return (
     <Link
-      href={`/titles/${t.slug}?year=${year}`}
+      href={`/titles/${t.slug}-h1b-sponsors?year=${year}`}
       style={{
         display: "flex",
         flexDirection: "column",
