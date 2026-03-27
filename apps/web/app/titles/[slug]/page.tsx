@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 type Summary = {
   totals?: { title: string; filings: number; approvals: number; last_year: number };
@@ -20,11 +21,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const sp = await searchParams;
-  let titleName = slug.replace(/-/g, ' ').toUpperCase();
+  const isSeoRoute = slug.endsWith('-h1b-sponsors');
+  const realSlug = isSeoRoute ? slug.replace(/-h1b-sponsors$/, '') : slug;
+  
+  let titleName = realSlug.replace(/-/g, ' ').toUpperCase();
   let desc = `Discover the top H1B sponsors, average salaries, and visa approval rates for ${titleName} jobs.`;
 
   try {
-    const s = await getSummary(slug, sp.year);
+    const s = await getSummary(realSlug, sp.year);
     if (s && s.totals) {
       titleName = s.totals.title;
       const filed = s.totals.filings?.toLocaleString() || 'multiple';
@@ -35,9 +39,9 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${titleName} H1B Salary & Top Employers`,
+    title: `${titleName} H1B Salary & Top Employers | H1B Finder`,
     description: desc,
-    alternates: { canonical: `/titles/${slug}${sp.year ? `?year=${sp.year}` : ''}` },
+    alternates: { canonical: `/titles/${realSlug}-h1b-sponsors${sp.year ? `?year=${sp.year}` : ''}` },
   };
 }
 
@@ -64,6 +68,13 @@ export default async function TitlePage({
   const { slug } = await params;
   const sp = await searchParams;
 
+  if (!slug.endsWith('-h1b-sponsors')) {
+    const yearParam = sp.year ? `?year=${sp.year}` : '';
+    redirect(`/titles/${slug}-h1b-sponsors${yearParam}`);
+  }
+
+  const realSlug = slug.replace(/-h1b-sponsors$/, '');
+
   const base = process.env.H1B_API_BASE_URL || 'http://127.0.0.1:3000';
   const yearsRes = await fetch(`${base}/api/v1/meta/years`, {
     next: { revalidate: API_REVALIDATE_SECONDS },
@@ -75,7 +86,7 @@ export default async function TitlePage({
 
   let s: Summary;
   try {
-    s = await getSummary(slug, year);
+    s = await getSummary(realSlug, year);
   } catch (e: any) {
     return (
       <div style={{ padding: '64px 20px', textAlign: 'center' }}>
@@ -88,7 +99,7 @@ export default async function TitlePage({
     );
   }
 
-  const totals = s.totals ?? { title: slug.replace(/-/g, ' '), filings: 0, approvals: 0, last_year: Number(year) || 0 };
+  const totals = s.totals ?? { title: realSlug.replace(/-/g, ' '), filings: 0, approvals: 0, last_year: Number(year) || 0 };
   const topCompanies = s.top_companies ?? [];
   const topStates = s.top_states ?? [];
   const trend = s.trend ?? [];
@@ -138,7 +149,7 @@ export default async function TitlePage({
           color: '#0f172a',
           lineHeight: 1.1
         }}>
-          {totals.title.trim()}
+          {totals.title.trim()} H1B Sponsorship & Salaries
         </h1>
         
         <div style={{ 
@@ -183,7 +194,7 @@ export default async function TitlePage({
               return (
                 <Link
                   key={y}
-                  href={`/titles/${slug}?year=${y}`}
+                  href={`/titles/${realSlug}-h1b-sponsors?year=${y}`}
                   style={{
                     padding: '8px 16px',
                     borderRadius: 999,
@@ -205,6 +216,19 @@ export default async function TitlePage({
 
       <div style={{ padding: '0 20px' }}>
         
+        {/* Conversion CTA */}
+        <div style={{ marginTop: 12, marginBottom: 32, padding: 32, background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderRadius: 24, color: '#fff', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>Search H1B Jobs for {totals.title.trim()}</h3>
+            <p style={{ marginTop: 8, color: '#cbd5e1', fontSize: 15, maxWidth: 500 }}>
+              Unlock full historical sponsorship data and salary benchmarks for {totals.title.trim()} roles with My Plan.
+            </p>
+          </div>
+          <Link href="/plan" style={{ background: '#3b82f6', color: '#fff', padding: '12px 24px', borderRadius: 999, fontWeight: 700, textDecoration: 'none', fontSize: 15, transition: 'all 0.2s', boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.39)' }}>
+            Start Free Search
+          </Link>
+        </div>
+
         {/* 2. Key Metrics Row */}
         <div style={{ 
           display: 'grid', 
@@ -244,7 +268,7 @@ export default async function TitlePage({
                       <div style={{ fontSize: 13, color: '#64748b', marginTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                          <span>{c.approvals.toLocaleString()} approvals</span>
                          {c.company_slug && (
-                           <Link href={`/companies/${c.company_slug}`} style={{ fontSize: 12, fontWeight: 700, textDecoration: 'none', color: '#4F46E5' }}>
+                           <Link href={`/companies/${c.company_slug}-h1b-sponsorship`} style={{ fontSize: 12, fontWeight: 700, textDecoration: 'none', color: '#4F46E5' }}>
                              Profile →
                            </Link>
                          )}

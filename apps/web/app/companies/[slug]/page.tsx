@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { getAvailableYears, getCompanyBySlug, getCompanyInsightsBySlug } from '@/lib/h1bApi';
 
 type TrendPoint = { year: number; filings: number; approvals: number };
@@ -7,24 +8,27 @@ type TrendPoint = { year: number; filings: number; approvals: number };
 export async function generateMetadata({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ year?: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const sp = await searchParams;
-  let companyName = slug.replace(/-/g, ' ').toUpperCase();
-  let desc = `Review H1B visa sponsorship history, salaries, and approval rates for ${companyName}. Discover top roles and locations.`;
+  const isSeoRoute = slug.endsWith('-h1b-sponsorship');
+  const realSlug = isSeoRoute ? slug.replace(/-h1b-sponsorship$/, '') : slug;
+  
+  let companyName = realSlug.replace(/-/g, ' ').toUpperCase();
+  let desc = `Review ${companyName} H1B visa sponsorship history, salaries, and approval rates. Discover top roles and locations.`;
   
   try {
-    const c = await getCompanyBySlug(slug, sp.year);
+    const c = await getCompanyBySlug(realSlug, sp.year);
     if (c && c.name) {
       companyName = c.name;
       const filed = c.h1b_applications_filed?.toLocaleString() || 'multiple';
-      desc = `Review H1B visa sponsorship history for ${companyName}. See top roles, locations, and data from ${filed} recent LCA certifications.`;
+      desc = `Review ${companyName} H1B visa sponsorship history. See top roles, locations, and data from ${filed} recent LCA certifications.`;
     }
   } catch (e) {
     // fallback to slug
   }
 
   return {
-    title: `${companyName} H1B Visa Sponsorships & Salaries`,
+    title: `${companyName} H1B Sponsorship Data & Salaries | H1B Finder`,
     description: desc,
-    alternates: { canonical: `/companies/${slug}${sp.year ? `?year=${sp.year}` : ''}` },
+    alternates: { canonical: `/companies/${realSlug}-h1b-sponsorship${sp.year ? `?year=${sp.year}` : ''}` },
   };
 }
 
@@ -38,11 +42,17 @@ export default async function CompanyDetail({
   const { slug } = await params;
   const sp = await searchParams;
 
+  if (!slug.endsWith('-h1b-sponsorship')) {
+    const yearParam = sp.year ? `?year=${sp.year}` : '';
+    redirect(`/companies/${slug}-h1b-sponsorship${yearParam}`);
+  }
+
+  const realSlug = slug.replace(/-h1b-sponsorship$/, '');
   const requestedYear = sp.year;
 
   let c;
   try {
-    c = await getCompanyBySlug(slug, requestedYear);
+    c = await getCompanyBySlug(realSlug, requestedYear);
   } catch (e: any) {
     return (
       <div style={{ padding: '64px 20px', textAlign: 'center' }}>
@@ -59,7 +69,7 @@ export default async function CompanyDetail({
 
   let insights;
   try {
-    insights = await getCompanyInsightsBySlug(slug, year);
+    insights = await getCompanyInsightsBySlug(realSlug, year);
   } catch {
     insights = { top_titles: [], top_states: [], trend: [] };
   }
@@ -117,7 +127,7 @@ export default async function CompanyDetail({
           color: '#0f172a',
           lineHeight: 1.1
         }}>
-          {c.name}
+          {c.name} H1B Sponsorship & Salaries
         </h1>
         
         <div style={{ 
@@ -162,7 +172,7 @@ export default async function CompanyDetail({
               return (
                 <Link
                   key={y}
-                  href={`/companies/${slug}?year=${y}`}
+                  href={`/companies/${realSlug}-h1b-sponsorship?year=${y}`}
                   style={{
                     padding: '8px 16px',
                     borderRadius: 999,
@@ -184,6 +194,19 @@ export default async function CompanyDetail({
 
       <div style={{ padding: '0 20px' }}>
         
+        {/* Conversion CTA */}
+        <div style={{ marginTop: 12, marginBottom: 32, padding: 32, background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', borderRadius: 24, color: '#fff', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 24 }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>Start your {c.name} job search</h3>
+            <p style={{ marginTop: 8, color: '#cbd5e1', fontSize: 15, maxWidth: 500 }}>
+              Track your H1B applications, save sponsors, and get personalized job match alerts with My Plan.
+            </p>
+          </div>
+          <Link href="/plan" style={{ background: '#3b82f6', color: '#fff', padding: '12px 24px', borderRadius: 999, fontWeight: 700, textDecoration: 'none', fontSize: 15, transition: 'all 0.2s', boxShadow: '0 4px 14px 0 rgba(59, 130, 246, 0.39)' }}>
+            Create Free Plan
+          </Link>
+        </div>
+
         {/* 2. Key Metrics Row */}
         <div style={{ 
           display: 'grid', 
@@ -212,7 +235,7 @@ export default async function CompanyDetail({
             borderRadius: 24,
             border: '1px dashed #e2e8f0'
           }}>
-            No filings detected for FY{year}. Perspective shifted? Check <Link href={`/companies/${slug}?year=${c.last_h1b_filing_year || 2023}`} style={{ fontWeight: 800, color: '#0f172a' }}>FY{c.last_h1b_filing_year || 2023}</Link>
+            No filings detected for FY{year}. Perspective shifted? Check <Link href={`/companies/${realSlug}-h1b-sponsorship?year=${c.last_h1b_filing_year || 2023}`} style={{ fontWeight: 800, color: '#0f172a' }}>FY{c.last_h1b_filing_year || 2023}</Link>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 24 }}>
@@ -233,7 +256,7 @@ export default async function CompanyDetail({
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                           <div style={{ fontWeight: 800, color: '#0f172a', fontSize: 16 }}>
                             {t.title_slug ? (
-                              <Link href={`/titles/${t.title_slug}?year=${year}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                              <Link href={`/titles/${t.title_slug}-h1b-sponsors?year=${year}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                                 {t.title}
                               </Link>
                             ) : (
