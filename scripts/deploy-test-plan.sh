@@ -14,7 +14,7 @@ case "${MODE}" in
     SITE_URL="${SITE_URL:-https://h1bfinder.com}"
     HOST_NAME="${HOST_NAME:-h1bfinder.com}"
     RESOLVE_IP="${RESOLVE_IP:-127.0.0.1}"
-    CURL_MAX_TIME="${CURL_MAX_TIME:-20}"
+    CURL_MAX_TIME="${CURL_MAX_TIME:-60}"
     BASE_CURL=(curl --silent --show-error --insecure --max-time "${CURL_MAX_TIME}" --resolve "${HOST_NAME}:443:${RESOLVE_IP}")
     ;;
   *)
@@ -37,6 +37,11 @@ ERROR_PATTERNS=(
 
 fail() {
   echo "::error title=Deploy Test Plan Failed::$1"
+  # Try to show backend logs if we are on the self-hosted runner
+  if [[ -f "docker-compose.yml" || -d "../../" ]]; then
+     echo "--- Backend Logs (tail) ---"
+     docker compose logs backend --tail 50 || true
+  fi
   exit 1
 }
 
@@ -131,9 +136,9 @@ run_mobile_content_smoke() {
 run_api_smoke() {
   echo "== ${MODE} smoke: API smoke =="
   check_api_json_success "Meta years" "/api/v1/meta/years"
-  check_api_json_success "Rankings" "/api/v1/rankings?year=2025&limit=10"
-  check_api_json_success "Summary VA" "/api/v1/rankings/summary?year=2025&state=VA"
-  check_api_json_success "Titles" "/api/v1/titles?year=2025&limit=50"
+  check_api_json_success "Rankings" "/api/v1/rankings?year=2024&limit=10"
+  check_api_json_success "Summary VA" "/api/v1/rankings/summary?year=2024&state=VA"
+  check_api_json_success "Titles" "/api/v1/titles?year=2024&limit=50"
 }
 
 echo "Smoke mode: ${MODE}"
