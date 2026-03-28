@@ -169,25 +169,16 @@ export default async function HomePage({
               <div className="landing-module-copy">Geographic hubs with the most H1B filings</div>
             </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12 }}>
-            {STATES.slice(0, 15).sort((a,b) => ['California', 'New York', 'Texas'].includes(a.name) ? -1 : 1).map((s) => (
+          <div className="landing-states-grid">
+            {STATES.slice(0, 15).sort((a,b) => ['California', 'New York', 'Texas'].includes(a.name) ? -1 : 1).map((s, idx) => (
               <Link 
                 key={s.code} 
                 href={`/states/${s.name.toLowerCase().replace(/ /g, '-')}-h1b-sponsors`}
-                style={{
-                  padding: '12px',
-                  borderRadius: 12,
-                  border: '1px solid #e2e8f0',
-                  background: '#fff',
-                  textAlign: 'center',
-                  fontWeight: 700,
-                  fontSize: 13,
-                  color: '#1e293b',
-                  textDecoration: 'none',
-                  transition: 'all 0.2s'
-                }}
+                className="landing-state-card"
               >
-                {s.name}
+                <div className="landing-state-rank">{idx + 1}</div>
+                <div className="landing-state-name">{s.name}</div>
+                <div className="landing-state-code">{s.code}</div>
               </Link>
             ))}
           </div>

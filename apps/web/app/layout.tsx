@@ -46,6 +46,9 @@ export const metadata: Metadata = {
   },
 };
 
+import LoadingIndicator from './LoadingIndicator';
+import { Suspense } from 'react';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const organizationSchema = {
     '@context': 'https://schema.org',
@@ -59,6 +62,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <Suspense fallback={null}>
+          <LoadingIndicator />
+        </Suspense>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
