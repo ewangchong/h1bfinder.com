@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-SITE_URL="${SITE_URL:-https://h1bfinder.com}"
-HOST_NAME="${HOST_NAME:-h1bfinder.com}"
+SITE_URL="${SITE_URL:-https://www.h1bfinder.com}"
+HOST_NAME="${HOST_NAME:-www.h1bfinder.com}"
 BACKEND_HEALTH_URL="${BACKEND_HEALTH_URL:-http://127.0.0.1:8089/health}"
 YEARS_URL="${YEARS_URL:-${SITE_URL}/api/v1/meta/years}"
 CURL_RETRIES="${CURL_RETRIES:-20}"
@@ -17,7 +17,7 @@ json_get() {
 }
 
 curl_base() {
-  curl --fail --silent --show-error \
+  curl -L --fail --silent --show-error \
     --retry "${CURL_RETRIES}" \
     --retry-delay "${CURL_RETRY_DELAY}" \
     --retry-all-errors \
