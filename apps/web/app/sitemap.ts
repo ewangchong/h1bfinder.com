@@ -52,6 +52,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(),
       changeFrequency: 'monthly' as const,
     })),
-    { url: `${siteUrl}/guides/how-to-find-h1b-sponsors`, lastModified: new Date() }
+    { url: `${siteUrl}/guides/how-to-find-h1b-sponsors`, lastModified: new Date() },
+    { url: `${siteUrl}/guides/cap-exempt-h1b-sponsors`, lastModified: new Date() },
+    { url: `${siteUrl}/guides/highest-paying-h1b-sponsors`, lastModified: new Date() },
+    { url: `${siteUrl}/guides/h1b-sponsors-in-texas`, lastModified: new Date() }
   ];
 }

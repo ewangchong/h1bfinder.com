@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getAvailableYears, getCompanyBySlug, getCompanyInsightsBySlug } from '@/lib/h1bApi';
+import { STATES } from '@/lib/states';
 
 type TrendPoint = { year: number; filings: number; approvals: number };
 
@@ -91,8 +92,35 @@ export default async function CompanyDetail({
     ? [...insights.trend].reverse().map((t: any) => String(t.year))
     : globalYears;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: c.name,
+    url: c.website_url ? (c.website_url.startsWith('http') ? c.website_url : `https://${c.website_url}`) : `https://www.h1bfinder.com/companies/${realSlug}-h1b-sponsorship`,
+    address: {
+      '@type': 'PostalAddress',
+      addressLocality: c.headquarters_city || '',
+      addressRegion: c.headquarters_state || '',
+      addressCountry: c.headquarters_country || 'US'
+    },
+    // We map approval rate to a 5-star rating system for search snippets
+    ...(rate !== null && filed > 0 && {
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: (rate * 5).toFixed(1),
+        reviewCount: filed,
+        bestRating: '5',
+        worstRating: '1',
+      }
+    })
+  };
+
   return (
     <article style={{ maxWidth: 1080, margin: '0 auto', paddingBottom: 64 }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       
       {/* 1. Page Header / Hero */}
       <div style={{ 
@@ -328,19 +356,34 @@ export default async function CompanyDetail({
                 <h2 style={cardTitleStyle}>Geographic Focus</h2>
                 <div style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {insights.top_states.length ? (
-                    insights.top_states.map((s: any) => (
-                      <div key={s.state} style={{ 
-                        padding: '10px 16px', 
-                        borderRadius: 12, 
-                        border: '1px solid #e2e8f0',
-                        background: '#fff',
-                        fontWeight: 700,
-                        fontSize: 14,
-                        color: '#0f172a'
-                      }}>
-                        {s.state} <span style={{ color: '#64748b', fontWeight: 500, marginLeft: 4 }}>({s.filings.toLocaleString()})</span>
-                      </div>
-                    ))
+                    insights.top_states.map((s: any) => {
+                      const st = STATES.find(x => x.code === s.state || x.name === s.state);
+                      const isLinked = !!st;
+                      const c = (
+                        <div style={{ 
+                          padding: '10px 16px', 
+                          borderRadius: 12, 
+                          border: '1px solid #e2e8f0',
+                          background: '#fff',
+                          fontWeight: 700,
+                          fontSize: 14,
+                          color: isLinked ? '#2563eb' : '#0f172a',
+                          textDecoration: 'none'
+                        }}>
+                          {s.state} <span style={{ color: '#64748b', fontWeight: 500, marginLeft: 4 }}>({s.filings.toLocaleString()})</span>
+                        </div>
+                      );
+
+                      if (isLinked) {
+                        const stateSlug = st.name.toLowerCase().replace(/ /g, '-');
+                        return (
+                          <Link key={s.state} href={`/states/${stateSlug}-h1b-sponsors`} style={{ textDecoration: 'none' }}>
+                            {c}
+                          </Link>
+                        );
+                      }
+                      return <div key={s.state}>{c}</div>;
+                    })
                   ) : (
                     <div style={{ color: '#94a3b8' }}>No geographic data.</div>
                   )}

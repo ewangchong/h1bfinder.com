@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { STATES } from '@/lib/states';
 
 type Summary = {
   totals?: { title: string; filings: number; approvals: number; last_year: number };
@@ -112,8 +113,31 @@ export default async function TitlePage({
     ? [...trend].reverse().map(t => String(t.year))
     : years;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'H1B Job Titles',
+        item: 'https://www.h1bfinder.com/titles'
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: totals.title.toUpperCase(),
+        item: `https://www.h1bfinder.com/titles/${realSlug}-h1b-sponsors`
+      }
+    ]
+  };
+
   return (
     <article style={{ maxWidth: 1080, margin: '0 auto', paddingBottom: 64 }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       
       {/* 1. Page Header / Hero */}
       <div style={{ 
@@ -289,19 +313,34 @@ export default async function TitlePage({
               <h2 style={cardTitleStyle}>Geographic Demand</h2>
               <div style={{ marginTop: 20, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {topStates.length ? (
-                  topStates.map((x) => (
-                    <div key={x.state} style={{ 
-                      padding: '10px 16px', 
-                      borderRadius: 12, 
-                      border: '1px solid #e2e8f0',
-                      background: '#fff',
-                      fontWeight: 700,
-                      fontSize: 14,
-                      color: '#0f172a'
-                    }}>
-                      {x.state} <span style={{ color: '#64748b', fontWeight: 500, marginLeft: 4 }}>({x.filings.toLocaleString()})</span>
-                    </div>
-                  ))
+                  topStates.map((x) => {
+                    const st = STATES.find(s => s.code === x.state || s.name === x.state);
+                    const isLinked = !!st;
+                    const c = (
+                      <div style={{ 
+                        padding: '10px 16px', 
+                        borderRadius: 12, 
+                        border: '1px solid #e2e8f0',
+                        background: '#fff',
+                        fontWeight: 700,
+                        fontSize: 14,
+                        color: isLinked ? '#2563eb' : '#0f172a',
+                        textDecoration: 'none'
+                      }}>
+                        {x.state} <span style={{ color: '#64748b', fontWeight: 500, marginLeft: 4 }}>({x.filings.toLocaleString()})</span>
+                      </div>
+                    );
+
+                    if (isLinked) {
+                      const stateSlug = st.name.toLowerCase().replace(/ /g, '-');
+                      return (
+                        <Link key={x.state} href={`/states/${stateSlug}-h1b-sponsors`} style={{ textDecoration: 'none' }}>
+                          {c}
+                        </Link>
+                      );
+                    }
+                    return <div key={x.state}>{c}</div>;
+                  })
                 ) : (
                   <div style={{ color: '#94a3b8' }}>No geographic data.</div>
                 )}

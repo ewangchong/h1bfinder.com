@@ -51,8 +51,31 @@ export default async function StateLandingPage({
   const avgSalary = summary?.totals?.avg_salary || 0;
   const rate = totalFilings > 0 ? (totalApprovals / totalFilings) * 100 : 0;
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'US States H1B Data',
+        item: 'https://www.h1bfinder.com/'
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: state.name,
+        item: `https://www.h1bfinder.com/states/${slug}`
+      }
+    ]
+  };
+
   return (
     <article style={{ maxWidth: 1080, margin: '0 auto', paddingBottom: 64 }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div style={{ 
         textAlign: 'center', 
         padding: '64px 20px 48px',
