@@ -172,20 +172,28 @@ export default async function HomePage({
           </div>
         </div>
         <div className="landing-states-grid">
-          {STATES.slice(0, 15).sort((a,b) => ['California', 'New York', 'Texas'].includes(a.name) ? -1 : 1).map((s, idx) => (
-            <Link 
-              key={s.code} 
-              href={`/states/${s.name.toLowerCase().replace(/ /g, '-')}-h1b-sponsors`}
-              className="landing-state-card"
-            >
-              <div className="landing-state-rank">{idx + 1}</div>
-              <div className="landing-state-info">
-                <div className="landing-state-name">{s.name}</div>
-                <div className="landing-state-code">{s.code} • Major Hub</div>
-              </div>
-              <div className="landing-state-action">View Data →</div>
-            </Link>
-          ))}
+          {[
+            'California', 'Texas', 'New York', 'Washington', 'New Jersey', 
+            'Illinois', 'Massachusetts', 'Georgia', 'Pennsylvania', 'Michigan', 
+            'Florida', 'Virginia', 'North Carolina', 'Ohio', 'Maryland'
+          ].map((stateName, idx) => {
+            const s = STATES.find(x => x.name === stateName);
+            if (!s) return null;
+            return (
+              <Link 
+                key={s.code} 
+                href={`/states/${s.name.toLowerCase().replace(/ /g, '-')}-h1b-sponsors`}
+                className="landing-state-card"
+              >
+                <div className="landing-state-rank">{idx + 1}</div>
+                <div className="landing-state-info">
+                  <div className="landing-state-name">{s.name}</div>
+                  <div className="landing-state-code">{s.code} • Major Hub</div>
+                </div>
+                <div className="landing-state-action">View Data →</div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
