@@ -89,11 +89,11 @@ check_api_json_success() {
 
 run_filter_matrix() {
   echo "== ${MODE} smoke: desktop filter matrix =="
-  check_page_content "VA 2025" "${SITE_URL}/?year=2025&state=VA" "${DESKTOP_UA}" "Find companies that actually"
-  check_page_content "VA 2024" "${SITE_URL}/?year=2024&state=VA" "${DESKTOP_UA}" "Find companies that actually"
-  check_page_content "VA empty year" "${SITE_URL}/?year=&state=VA" "${DESKTOP_UA}" "Find companies that actually"
-  check_page_content "CA no year" "${SITE_URL}/?state=CA" "${DESKTOP_UA}" "Find companies that actually"
-  check_page_content "Year 2023" "${SITE_URL}/?year=2023" "${DESKTOP_UA}" "Find companies that actually"
+  check_page_content "VA 2025" "${SITE_URL}/?year=2025&state=VA" "${DESKTOP_UA}" "Find employers that actually"
+  check_page_content "VA 2024" "${SITE_URL}/?year=2024&state=VA" "${DESKTOP_UA}" "Find employers that actually"
+  check_page_content "VA empty year" "${SITE_URL}/?year=&state=VA" "${DESKTOP_UA}" "Find employers that actually"
+  check_page_content "CA no year" "${SITE_URL}/?state=CA" "${DESKTOP_UA}" "Find employers that actually"
+  check_page_content "Year 2023" "${SITE_URL}/?year=2023" "${DESKTOP_UA}" "Find employers that actually"
 }
 
 run_page_health() {
@@ -110,7 +110,7 @@ run_page_health() {
 
 run_desktop_content_smoke() {
   echo "== ${MODE} smoke: full-path content smoke =="
-  check_page_content "Home" "${SITE_URL}/" "${DESKTOP_UA}" "Find companies that actually"
+  check_page_content "Home" "${SITE_URL}/" "${DESKTOP_UA}" "Find employers that actually"
   check_page_content "Companies" "${SITE_URL}/companies" "${DESKTOP_UA}" "Top Sponsors"
   check_page_content "Titles" "${SITE_URL}/titles" "${DESKTOP_UA}" "Top Jobs"
   check_page_content "Plan" "${SITE_URL}/plan" "${DESKTOP_UA}" "Generate a data-backed roadmap"
