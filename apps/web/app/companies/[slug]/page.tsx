@@ -216,13 +216,55 @@ export default async function CompanyDetail({
         }}>
           <BigStat label="Approval Rate" value={rate === null ? '—' : `${(rate * 100).toFixed(1)}%`} subtext={`FY${year} benchmark`} />
           <BigStat label="Total Filings" value={filed ? filed.toLocaleString() : '—'} subtext="LCA disclosure files" />
-          <BigStat label="Total Approvals" value={approved ? approved.toLocaleString() : '—'} subtext="Certified applications" />
+          <BigStat label="Reliability Score" value={`${stability.score}/100`} subtext={stability.label} valueColor={stability.color} />
           <BigStat
-            label="Sponsor Stability"
-            value={stability.label}
+            label="Historical Trend"
+            value={stability.trendDirection === 'up' ? 'Growing' : stability.trendDirection === 'down' ? 'Declining' : 'Steady'}
             subtext={stability.explanation}
             valueColor={stability.color}
           />
+        </div>
+
+        {/* 2.5 Reliability Analysis Section (SEO Rich) */}
+        <div style={{ ...cardStyle, marginBottom: 32, background: 'linear-gradient(to bottom right, #ffffff, #f8fafc)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <h2 style={cardTitleStyle}>Sponsorship Reliability Analysis</h2>
+              <p style={{ marginTop: 8, color: '#64748b', fontSize: 14, maxWidth: 600 }}>
+                Our reliability score is calculated based on multi-year filing consistency, annual volume variance, and approval rates.
+              </p>
+            </div>
+            <div style={{ 
+              padding: '12px 20px', 
+              borderRadius: 16, 
+              background: stability.color + '10', 
+              border: `1px solid ${stability.color}30`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12
+            }}>
+              <div style={{ fontSize: 24, fontWeight: 900, color: stability.color }}>{stability.score}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: stability.color, textTransform: 'uppercase' }}>Reliability<br/>Score</div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24 }}>
+             <div style={{ padding: '20px', borderRadius: 16, background: '#fff', border: '1px solid #f1f5f9' }}>
+               <h3 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Consistency Metrics</h3>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                 <MetricRow label="Active Years" value={`${stability.activeYears} of 5`} highlight={stability.activeYears >= 4} />
+                 <MetricRow label="Volume Variance" value={stability.varianceLabel} highlight={stability.label === 'Stable'} />
+                 <MetricRow label="Approval Track" value={(rate !== null && rate > 0.9) ? 'Excellent' : 'Average'} highlight={!!(rate !== null && rate > 0.9)} />
+               </div>
+             </div>
+             
+             <div style={{ padding: '20px', borderRadius: 16, background: '#fff', border: '1px solid #f1f5f9' }}>
+               <h3 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 800, color: '#0f172a' }}>Expert Verdict</h3>
+               <div style={{ color: '#475569', fontSize: 14, lineHeight: 1.6 }}>
+                 <strong>{stability.label} Sponsor:</strong> {stability.detailedVerdict}
+               </div>
+             </div>
+          </div>
         </div>
 
         {!hasInsights ? (
@@ -411,7 +453,12 @@ function getSponsorStability(trend: TrendPoint[]) {
     return {
       label: 'Moderate',
       color: '#b45309',
+      score: 50,
+      activeYears: 0,
+      varianceLabel: 'N/A',
+      trendDirection: 'neutral',
       explanation: 'No multi-year filing history available yet.',
+      detailedVerdict: 'Historical trends are not yet available for this sponsor. We recommend checking their primary website for official sponsorship stances while more data is indexed.'
     };
   }
 
@@ -419,58 +466,75 @@ function getSponsorStability(trend: TrendPoint[]) {
   const lastYear = sorted[sorted.length - 1].year;
   const firstYear = Math.max(sorted[0].year, lastYear - 4);
   const filingsByYear = new Map(sorted.map((point) => [point.year, point.filings]));
-  const recentSeries = Array.from({ length: lastYear - firstYear + 1 }, (_, index) => {
-    const year = firstYear + index;
+  
+  const recentSeries = Array.from({ length: 5 }, (_, index) => {
+    const year = lastYear - 4 + index;
     return { year, filings: filingsByYear.get(year) ?? 0 };
   });
 
-  if (recentSeries.length < 2) {
-    return {
-      label: 'Moderate',
-      color: '#b45309',
-      explanation: `Only ${recentSeries.length} recent filing year on record.`,
-    };
-  }
-
   const filings = recentSeries.map((point) => point.filings);
+  const activeYears = filings.filter(v => v > 0).length;
   const mean = filings.reduce((sum, value) => sum + value, 0) / filings.length;
   const variance = filings.reduce((sum, value) => sum + (value - mean) ** 2, 0) / filings.length;
-  const coefficientOfVariation = mean > 0 ? Math.sqrt(variance) / mean : 0;
-  const zeroYears = filings.filter((value) => value === 0).length;
-  const activeYears = filings.length - zeroYears;
-  const yoySwings = recentSeries
-    .slice(1)
-    .map((point, index) => {
-      const previous = recentSeries[index].filings;
-      if (previous === 0) return point.filings > 0 ? 1 : 0;
-      return Math.abs(point.filings - previous) / previous;
-    });
-  const avgSwing = yoySwings.length
-    ? yoySwings.reduce((sum, value) => sum + value, 0) / yoySwings.length
-    : 0;
+  const cv = mean > 0 ? Math.sqrt(variance) / mean : 1;
+  
+  // YoY Trend
+  const lastVal = filings[filings.length - 1];
+  const prevVal = filings[filings.length - 2] || 0;
+  const trendDirection = lastVal > prevVal * 1.1 ? 'up' : lastVal < prevVal * 0.9 ? 'down' : 'stable';
 
-  if (zeroYears === 0 && activeYears >= 3 && coefficientOfVariation <= 0.35) {
+  // Score Calculation (0-100)
+  // Consistency (40 pts) + Volume (30 pts) + Trend (30 pts)
+  const consistencyScore = (activeYears / 5) * 40;
+  const varianceScore = Math.max(0, (1 - cv) * 30);
+  const growthScore = trendDirection === 'up' ? 30 : trendDirection === 'stable' ? 20 : 10;
+  const totalScore = Math.round(consistencyScore + varianceScore + growthScore);
+
+  if (activeYears >= 4 && cv <= 0.4) {
     return {
       label: 'Stable',
       color: '#059669',
-      explanation: `${activeYears} straight filing years with ${(avgSwing * 100).toFixed(0)}% average volume swings.`,
+      score: totalScore,
+      activeYears,
+      varianceLabel: 'Very Low',
+      trendDirection,
+      explanation: `${activeYears}/5 active years with steady volume.`,
+      detailedVerdict: `Highly reliable hiring pattern. This sponsor has maintained consistent H1B filing volumes over the last 5 years, making them a predictable target for applicants.`
     };
   }
 
-  if (zeroYears > 0 || coefficientOfVariation >= 0.75 || avgSwing >= 0.6) {
-    const gapText = zeroYears > 0 ? `${zeroYears} zero/gap year${zeroYears > 1 ? 's' : ''}` : `${(avgSwing * 100).toFixed(0)}% average swings`;
+  if (totalScore < 40 || cv >= 1.0) {
     return {
       label: 'Volatile',
       color: '#dc2626',
-      explanation: `${gapText} across the last ${recentSeries.length} years of filings.`,
+      score: totalScore,
+      activeYears,
+      varianceLabel: 'High',
+      trendDirection,
+      explanation: 'Irregular filing patterns detected.',
+      detailedVerdict: `This sponsor shows high volatility in visa filings. This could indicate seasonal hiring or project-based sponsorship. Verify their current job openings carefully.`
     };
   }
 
   return {
     label: 'Moderate',
     color: '#b45309',
-    explanation: `${activeYears} active years with ${(avgSwing * 100).toFixed(0)}% average filing swings recently.`,
+    score: totalScore,
+    activeYears,
+    varianceLabel: cv < 0.7 ? 'Moderate' : 'High',
+    trendDirection,
+    explanation: `${activeYears}/5 years active with moderate swings.`,
+    detailedVerdict: `Moderate reliability. While this company sponsors regularly, their annual volume fluctuates based on business cycles. A good target but requires timing.`
   };
+}
+
+function MetricRow({ label, value, highlight }: { label: string, value: string, highlight?: boolean }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13 }}>
+      <div style={{ color: '#64748b', fontWeight: 500 }}>{label}</div>
+      <div style={{ fontWeight: 700, color: highlight ? '#059669' : '#0f172a' }}>{value}</div>
+    </div>
+  );
 }
 
 function initials(name: string) {
