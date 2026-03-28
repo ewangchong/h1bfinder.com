@@ -11,11 +11,11 @@ case "${MODE}" in
     BASE_CURL=(curl --silent --show-error --max-time "${CURL_MAX_TIME}")
     ;;
   prod)
-    SITE_URL="${SITE_URL:-https://h1bfinder.com}"
-    HOST_NAME="${HOST_NAME:-h1bfinder.com}"
+    SITE_URL="${SITE_URL:-https://www.h1bfinder.com}"
+    HOST_NAME="${HOST_NAME:-www.h1bfinder.com}"
     RESOLVE_IP="${RESOLVE_IP:-127.0.0.1}"
     CURL_MAX_TIME="${CURL_MAX_TIME:-60}"
-    BASE_CURL=(curl --silent --show-error --insecure --max-time "${CURL_MAX_TIME}" --resolve "${HOST_NAME}:443:${RESOLVE_IP}")
+    BASE_CURL=(curl -L --silent --show-error --insecure --max-time "${CURL_MAX_TIME}" --resolve "${HOST_NAME}:443:${RESOLVE_IP}")
     ;;
   *)
     echo "::error title=Deploy Test Plan Failed::Unsupported MODE/SMOKE_MODE '${MODE_RAW}'. Use local or prod."
