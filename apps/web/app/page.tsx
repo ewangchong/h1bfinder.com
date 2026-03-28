@@ -162,26 +162,30 @@ export default async function HomePage({
           </div>
         </div>
 
-        <div>
-           <div className="landing-module-head">
-            <div>
-              <h2 className="landing-module-title">Top States</h2>
-              <div className="landing-module-copy">Geographic hubs with the most H1B filings</div>
-            </div>
+      </section>
+
+      <section className="landing-module-section">
+        <div className="landing-module-head" style={{ justifyContent: 'center', textAlign: 'center', marginBottom: 32 }}>
+          <div>
+            <h2 className="landing-module-title" style={{ fontSize: 32 }}>H1B Sponsorship Hubs</h2>
+            <div className="landing-module-copy">Geographic centers with the highest historical filing volume</div>
           </div>
-          <div className="landing-states-grid">
-            {STATES.slice(0, 15).sort((a,b) => ['California', 'New York', 'Texas'].includes(a.name) ? -1 : 1).map((s, idx) => (
-              <Link 
-                key={s.code} 
-                href={`/states/${s.name.toLowerCase().replace(/ /g, '-')}-h1b-sponsors`}
-                className="landing-state-card"
-              >
-                <div className="landing-state-rank">{idx + 1}</div>
+        </div>
+        <div className="landing-states-grid">
+          {STATES.slice(0, 15).sort((a,b) => ['California', 'New York', 'Texas'].includes(a.name) ? -1 : 1).map((s, idx) => (
+            <Link 
+              key={s.code} 
+              href={`/states/${s.name.toLowerCase().replace(/ /g, '-')}-h1b-sponsors`}
+              className="landing-state-card"
+            >
+              <div className="landing-state-rank">{idx + 1}</div>
+              <div className="landing-state-info">
                 <div className="landing-state-name">{s.name}</div>
-                <div className="landing-state-code">{s.code}</div>
-              </Link>
-            ))}
-          </div>
+                <div className="landing-state-code">{s.code} • Major Hub</div>
+              </div>
+              <div className="landing-state-action">View Data →</div>
+            </Link>
+          ))}
         </div>
       </section>
 
