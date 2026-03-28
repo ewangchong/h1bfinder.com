@@ -3,10 +3,14 @@
 }
 
 http://h1bfriend.com, http://www.h1bfriend.com, http://h1bfriendly.com, http://www.h1bfriendly.com {
-    redir https://h1bfinder.com{uri} permanent
+    redir https://www.h1bfinder.com{uri} permanent
 }
 
-h1bfinder.com, www.h1bfinder.com, http://localhost:3000, http://localhost, :3000 {
+h1bfinder.com {
+    redir https://www.h1bfinder.com{uri} permanent
+}
+
+www.h1bfinder.com, http://localhost:3000, http://localhost, :3000 {
     encode zstd gzip
 
     log {

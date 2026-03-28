@@ -32,7 +32,7 @@ services:
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
       - CHAT_RATE_LIMIT_PER_MIN=${CHAT_RATE_LIMIT_PER_MIN:-20}
       - ADMIN_TOKEN=${ADMIN_TOKEN}
-      - APP_BASE_URL=${APP_BASE_URL:-https://h1bfinder.com}
+      - APP_BASE_URL=${APP_BASE_URL:-https://www.h1bfinder.com}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
       - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
@@ -59,14 +59,14 @@ services:
     build:
       context: ./apps/web
       args:
-        - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://h1bfinder.com}
+        - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://www.h1bfinder.com}
     container_name: h1bfinder-web
     expose:
       - "3000"
     environment:
       - H1B_API_BASE_URL=http://backend:8089
       - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL:-}
-      - NEXT_PUBLIC_SITE_URL=https://h1bfinder.com
+      - NEXT_PUBLIC_SITE_URL=https://www.h1bfinder.com
     depends_on:
       - backend
 
