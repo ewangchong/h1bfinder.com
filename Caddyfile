@@ -2,7 +2,7 @@
     email chong.wang@me.com
 }
 
-http://h1bfriend.com, http://www.h1bfriend.com, http://h1bfriendly.com, http://www.h1bfriendly.com {
+h1bfriend.com, www.h1bfriend.com, h1bfriendly.com, www.h1bfriendly.com {
     redir https://www.h1bfinder.com{uri} permanent
 }
 
