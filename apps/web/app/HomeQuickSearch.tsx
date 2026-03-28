@@ -9,6 +9,7 @@ const TABS: Array<{ key: TabKey; label: string; placeholder: string }> = [
   { key: 'jobs', label: 'Job', placeholder: 'e.g. Data Scientist, Software Engineer' },
   { key: 'location', label: 'Location', placeholder: 'e.g. Virginia, Austin, CA' },
 ];
+import { STATES } from '@/lib/states';
 
 export default function HomeQuickSearch() {
   const [tab, setTab] = useState<TabKey>('sponsors');
@@ -30,8 +31,26 @@ export default function HomeQuickSearch() {
       return;
     }
 
-    // location query still routes users to ranked sponsors page using state filter hint.
-    window.location.href = value ? `/companies?keyword=${encodeURIComponent(value)}` : '/companies';
+    // location query matches states
+    if (tab === 'location') {
+      if (!value) {
+        window.location.href = '/plan';
+        return;
+      }
+      
+      const v = value.toLowerCase();
+      const matchedState = STATES.find(s => 
+        s.name.toLowerCase() === v || 
+        s.code.toLowerCase() === v || 
+        s.name.toLowerCase().includes(v)
+      ) || STATES.find(s => s.code.toLowerCase() === 'ca'); // Fallback to CA if totally confused
+
+      if (matchedState) {
+        const stateSlug = matchedState.name.toLowerCase().replace(/ /g, '-');
+        window.location.href = `/states/${stateSlug}-h1b-sponsors`;
+      }
+      return;
+    }
   }
 
   return (
