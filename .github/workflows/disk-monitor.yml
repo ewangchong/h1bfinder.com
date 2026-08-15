@@ -1,0 +1,141 @@
+name: Production Disk Monitor
+
+on:
+  schedule:
+    # Check every six hours, offset from the top of the hour.
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: production-disk-monitor
+  cancel-in-progress: true
+
+jobs:
+  inspect:
+    name: Inspect production root disk
+    runs-on:
+      - self-hosted
+      - ec2
+      - prod
+    timeout-minutes: 5
+    outputs:
+      usage: ${{ steps.disk.outputs.usage }}
+      level: ${{ steps.disk.outputs.level }}
+      available: ${{ steps.disk.outputs.available }}
+
+    steps:
+      - name: Measure root filesystem
+        id: disk
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          read -r usage available <<<"$(df --output=pcent,avail / | awk 'NR == 2 {gsub(/%/, "", $1); print $1, $2}')"
+
+          if (( usage >= 90 )); then
+            level="critical"
+          elif (( usage >= 80 )); then
+            level="warning"
+          else
+            level="ok"
+          fi
+
+          echo "usage=${usage}" >>"${GITHUB_OUTPUT}"
+          echo "available=${available}" >>"${GITHUB_OUTPUT}"
+          echo "level=${level}" >>"${GITHUB_OUTPUT}"
+
+          echo "Root disk usage: ${usage}% (${available} KiB available); level=${level}"
+          df -h /
+          docker system df || true
+
+  alert:
+    name: Update GitHub disk alert
+    needs: inspect
+    if: always() && needs.inspect.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      ALERT_LEVEL: ${{ needs.inspect.outputs.level }}
+      DISK_USAGE: ${{ needs.inspect.outputs.usage }}
+      AVAILABLE_KIB: ${{ needs.inspect.outputs.available }}
+
+    steps:
+      - name: Create, update, or resolve disk alert
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          alert_title="[Ops] Production disk usage alert"
+          alert_label="ops:disk-alert"
+          checked_at="$(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+          gh label create "${alert_label}" \
+            --color D93F0B \
+            --description "Automated production disk capacity alert" \
+            --force
+
+          issue_number="$(
+            gh issue list \
+              --state all \
+              --label "${alert_label}" \
+              --json number \
+              --jq '.[0].number // empty'
+          )"
+
+          if [[ "${ALERT_LEVEL}" == "ok" ]]; then
+            if [[ -n "${issue_number}" ]]; then
+              issue_state="$(gh issue view "${issue_number}" --json state --jq '.state')"
+              if [[ "${issue_state}" == "OPEN" ]]; then
+                gh issue close "${issue_number}" \
+                  --comment "Resolved automatically at ${checked_at}: root disk usage is ${DISK_USAGE}%, below the 80% warning threshold."
+              fi
+            fi
+            exit 0
+          fi
+
+          if [[ "${ALERT_LEVEL}" == "critical" ]]; then
+            threshold="90% critical"
+          else
+            threshold="80% warning"
+          fi
+
+          alert_body="$(printf '%s\n\n%s\n%s\n%s\n%s\n\n%s\n' \
+            "Production root disk usage crossed the ${threshold} threshold." \
+            "- Alert level: **${ALERT_LEVEL}**" \
+            "- Disk usage: **${DISK_USAGE}%**" \
+            "- Available: **${AVAILABLE_KIB} KiB**" \
+            "- Last checked: **${checked_at}**" \
+            "Review Docker build cache, unused images, container logs, and system journals.")"
+
+          previous_level=""
+          if [[ -z "${issue_number}" ]]; then
+            issue_url="$(gh issue create \
+              --title "${alert_title}" \
+              --label "${alert_label}" \
+              --body "${alert_body}")"
+            issue_number="${issue_url##*/}"
+          else
+            issue_state="$(gh issue view "${issue_number}" --json state --jq '.state')"
+            previous_body="$(gh issue view "${issue_number}" --json body --jq '.body')"
+            previous_level="$(printf '%s\n' "${previous_body}" | sed -n 's/.*Alert level: \*\*\([^*]*\)\*\*.*/\1/p' | head -n 1)"
+
+            if [[ "${issue_state}" != "OPEN" ]]; then
+              gh issue reopen "${issue_number}"
+            fi
+            gh issue edit "${issue_number}" --body "${alert_body}"
+          fi
+
+          if [[ "${ALERT_LEVEL}" == "critical" ]]; then
+            if [[ "${previous_level}" != "critical" && -n "${previous_level}" ]]; then
+              gh issue comment "${issue_number}" \
+                --body "Escalated to **critical** at ${checked_at}: root disk usage reached ${DISK_USAGE}%."
+            fi
+            echo "Production disk usage is critical (${DISK_USAGE}%)."
+            exit 1
+          fi

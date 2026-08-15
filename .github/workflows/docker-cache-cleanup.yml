@@ -1,0 +1,44 @@
+name: Production Docker Cache Cleanup
+
+on:
+  schedule:
+    # Sunday at 07:15 UTC (03:15/02:15 America/New_York).
+    - cron: "15 7 * * 0"
+  workflow_dispatch:
+
+concurrency:
+  group: production-server-maintenance
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    name: Remove Docker build cache older than 7 days
+    runs-on:
+      - self-hosted
+      - ec2
+      - prod
+    timeout-minutes: 15
+
+    steps:
+      - name: Show disk usage before cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          df -h /
+          docker system df
+
+      - name: Prune old BuildKit cache
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Keep recent cache so normal deployments remain fast. This does not
+          # remove containers, volumes, or images currently used by services.
+          docker builder prune --all --force --filter "until=168h"
+
+      - name: Show disk usage after cleanup
+        if: always()
+        shell: bash
+        run: |
+          df -h /
+          docker system df
