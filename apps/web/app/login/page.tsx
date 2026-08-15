@@ -23,6 +23,7 @@ export default async function LoginPage({
   }
 
   const googleEnabled = Boolean(config?.data?.google_enabled);
+  const authStatusAvailable = Boolean(config?.success && config?.data);
 
   return (
     <div style={{ maxWidth: 720, margin: '48px auto', padding: 24 }}>
@@ -52,7 +53,11 @@ export default async function LoginPage({
           </Link>
         </div>
 
-        {!googleEnabled ? (
+        {!authStatusAvailable ? (
+          <div className="auth-card-note">
+            Sign-in is temporarily unavailable because the authentication service could not be reached. Please try again shortly.
+          </div>
+        ) : !googleEnabled ? (
           <div className="auth-card-note">
             Google OAuth is not fully configured yet. Please set <code>GOOGLE_CLIENT_ID</code>, <code>GOOGLE_CLIENT_SECRET</code>, and <code>GOOGLE_REDIRECT_URI</code> in the backend environment.
           </div>

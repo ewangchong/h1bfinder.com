@@ -19,6 +19,7 @@ const navItems = [
   { href: '/titles', label: 'Top Jobs' },
   { href: '/plan', label: 'My Plan' },
   { href: '/chat', label: 'AI Chat' },
+  { href: '/community', label: 'Community' },
   { href: '/blog', label: 'Blog' },
 ] as const;
 
@@ -114,9 +115,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <TranslateToggle />
               <AuthStatus />
               <div className="nav-mobile">
-                <Link href="/blog" style={navLink}>
-                  Blog
-                </Link>
+                <Link href="/community" style={navLink}>Community</Link>
               </div>
             </div>
           </div>
@@ -140,9 +139,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <p style={{ margin: '0 0 6px 0' }}>All information is provided "as is" for informational purposes only. We make no representations or warranties regarding the accuracy or completeness of the data.</p>
                   <p style={{ margin: '0 0 6px 0' }}>An LCA filing does not represent an actual job opening or guarantee visa approval.</p>
                   <p style={{ margin: 0 }}>
-                    This website is built with AI assistance. Found an issue or have suggestions? Please open an issue on GitHub:{' '}
-                    <a href="https://github.com/ewangchong/h1bfinder.com" target="_blank" rel="noreferrer" style={{ color: '#93C5FD' }}>
-                      github.com/ewangchong/h1bfinder.com
+                    This website is built with AI assistance. Questions, experiences, or suggestions? Join the community:{' '}
+                    <a href="https://github.com/ewangchong/h1bfinder.com/discussions" target="_blank" rel="noreferrer" style={{ color: '#93C5FD' }}>
+                      GitHub Discussions
                     </a>
                   </p>
                 </div>
